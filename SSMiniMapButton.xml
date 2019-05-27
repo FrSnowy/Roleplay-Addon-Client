@@ -1,0 +1,88 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Script file="STIKMiniMapButton.lua" />
+	<Button name="STIKMiniMapButton" parent="Minimap" movable="true" enableMouse="true" frameStrata="LOW">
+		<Size>
+			<AbsDimension x="33" y="33" />
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT">
+				<Offset x="0" y="0" />
+			</Anchor>
+		</Anchors>
+		<Scripts>
+			<OnLoad>
+				STIKMiniMapButton:RegisterForDrag("LeftButton")
+				self:RegisterForClicks("LeftButtonUp","RightButtonUp")
+				self:SetScript("OnClick",function(_,arg1)
+					STIKMiniMapButton_OnClick()
+				end)
+				STIKMiniMapButtonPosition_LoadFromDefaults()
+			</OnLoad>
+			<OnDragStart>
+				STIKMiniMapButton_DraggingFrame:Show()
+			</OnDragStart>
+			<OnDragStop>
+				STIKMiniMapButton_DraggingFrame:Hide()
+			</OnDragStop>
+			<OnEnter>
+				STIKMiniMapButtonTooltip:ClearLines()
+				STIKMiniMapButtonTooltip:SetOwner(STIKMiniMapButton,"CENTER")
+				STIKMiniMapButtonTooltip:AddLine("Система игры от Snowy")
+				STIKMiniMapButtonTooltip:AddLine("Нажмите для открытия меню")
+				STIKMiniMapButtonTooltip:Show()
+			</OnEnter>
+			<OnLeave>
+				STIKMiniMapButtonTooltip:Hide()
+			</OnLeave>
+		</Scripts>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="STIKMiniMapButton_Icon" file="interface\ICONS\inv_misc_dice_02">
+					<Size>
+						<AbsDimension x="20" y="20" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="7" y="-6" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture file="Interface\Minimap\MiniMap-TrackingBorder">
+					<Size>
+						<AbsDimension x="56" y="56" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="STIKMiniMapButton_DraggingFrame" hidden="true">
+				<Scripts>
+					<OnUpdate>
+						STIK_Minimap_Update()
+					</OnUpdate>
+				</Scripts>
+			</Frame>
+			<GameTooltip name="STIKMiniMapButtonTooltip" inherits="GameTooltipTemplate">
+				<Layers>
+					<Layer>
+						<FontString font="Interface\addons\D3Orbs2\fonts\Of Wildflowers and Wings.ttf">
+							<FontHeight val="16"></FontHeight>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+					</OnLoad>
+				</Scripts>
+			</GameTooltip>
+		</Frames>
+		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+	</Button>
+</Ui>

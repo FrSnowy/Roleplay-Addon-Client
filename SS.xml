@@ -1,0 +1,23 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+	<Script file="STIKSystem.lua"/>
+	<Frame name="SystemFrame" parent="UIParent" hidden="false">
+		<Scripts>
+			<OnLoad>
+			    self:RegisterEvent("VARIABLES_LOADED");
+                self:RegisterEvent("CHAT_MSG_ADDON");
+                self:RegisterEvent("PLAYER_TARGET_CHANGED");
+			</OnLoad>
+			<onEvent>
+			    if( event == "VARIABLES_LOADED" ) then
+				    onAddonReady()
+			    end
+                if ( event == "CHAT_MSG_ADDON" ) then
+                    onDMSaySomething(arg1, arg2, arg3, arg4)
+                end
+                if ( event == "PLAYER_TARGET_CHANGED" ) then
+                    showTargetInfo(arg1);
+                end
+		    </onEvent>
+		</Scripts>
+	</Frame>
+</Ui>
