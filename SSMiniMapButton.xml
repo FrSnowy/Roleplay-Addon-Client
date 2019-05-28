@@ -27,7 +27,7 @@
 			<OnEnter>
 				STIKMiniMapButtonTooltip:ClearLines()
 				STIKMiniMapButtonTooltip:SetOwner(STIKMiniMapButton,"CENTER")
-				STIKMiniMapButtonTooltip:AddLine("Система игры от Snowy")
+				STIKMiniMapButtonTooltip:AddLine("Система игры от Снежка - Игрок")
 				STIKMiniMapButtonTooltip:AddLine("Нажмите для открытия меню")
 				STIKMiniMapButtonTooltip:Show()
 			</OnEnter>

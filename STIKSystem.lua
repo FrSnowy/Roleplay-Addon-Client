@@ -1017,6 +1017,10 @@ function onDMSaySomething(prefix, msg, tp, sender)
             HP_TEXT:SetText(params.health);
         end;
     end;
+    if (PREFIX == 'S11') then
+        local _type, number = strsplit("_", COUNT);
+        PlaySoundFile("Interface\\AddOns\\STIKSystem\\EFFECTS\\".._type.."\\"..number..".mp3", "Ambience");    
+    end;
     if (PREFIX == 'SK') then
         ForceQuit();
     end;
