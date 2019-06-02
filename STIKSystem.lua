@@ -874,156 +874,238 @@ function onAddonReady()
 end;
 
 function onDMSaySomething(prefix, msg, tp, sender)
-    local PREFIX, COUNT = strsplit(" ", prefix);
-    if (PREFIX == 'S1') then
-        COUNT = tonumber(COUNT, 10);
-        if (COUNT > 0) then
-            print("СИСТЕМА: Вы получили "..COUNT.." exp");
-            progress.expr = progress.expr + COUNT;
-            if (progress.expr >= neededExpr) then
-                progress.lvl = progress.lvl + 1;
-                progress.expr = progress.expr - neededExpr;
-                neededExpr = progress.lvl * 1000;
-                params.points = calculatePoints(stats, progress);
-                print("СИСТЕМА: Ваш уровень был повышен!");
-            end
-            updateStats();
-        end;
-        if (COUNT < 0) then
-            print("СИСТЕМА: Вы потеряли "..math.abs(COUNT).." exp");
-            progress.expr = progress.expr + COUNT;
-            if (progress.expr < 0) then
-                if (progress.lvl > 1) then
-                    local diff = math.abs(progress.expr);
-                    progress.lvl = progress.lvl - 1;
+    if (not(prefix == 'STIK_SYSTEM')) then return end;
+    local COMMAND, VALUE = strsplit('&', msg);
+
+    local commandConnector = {
+        give_exp = function(experience)
+            local experience = tonumber(experience, 10);
+            if (experience >= 0) then
+                print("СИСТЕМА: Вы получили "..experience.." exp");
+                progress.expr = progress.expr + experience;
+                if (progress.expr >= neededExpr) then
+                    progress.lvl = progress.lvl + 1;
+                    progress.expr = progress.expr - neededExpr;
                     neededExpr = progress.lvl * 1000;
-                    progress.expr = neededExpr - diff;
-                    clearTalantes();
-                    print("СИСТЕМА: Ваш уровень был понижен!");
-                else
-                    progress.expr = 0;
+                    params.points = calculatePoints(stats, progress);
+                    print("СИСТЕМА: Ваш уровень был повышен!");
+                end
+            else
+                print("СИСТЕМА: Вы потеряли "..math.abs(experience).." exp");
+                progress.expr = progress.expr + experience;
+                if (progress.expr < 0) then
+                    if (progress.lvl > 1) then
+                        local diff = math.abs(progress.expr);
+                        progress.lvl = progress.lvl - 1;
+                        neededExpr = progress.lvl * 1000;
+                        progress.expr = neededExpr - diff;
+                        clearTalantes();
+                        print("СИСТЕМА: Ваш уровень был понижен!");
+                    else
+                        progress.expr = 0;
+                    end;
                 end;
             end;
             updateStats();
-        end;
-    end;
-    if (PREFIX == 'S2') then
-        COUNT = tonumber(COUNT, 10);
-        local shouldClearParams = COUNT < progress.lvl;
-        progress.lvl = COUNT;
-        print('СИСТЕМА: Уровень установлен на '..progress.lvl);
-        neededExpr = progress.lvl * 1000;
-        progress.expr = 0;
-        if shouldClearParams then clearTalantes(); end;
-        updateStats();
-    end;
-    if (PREFIX == 'S3') then
-        SendChatMessage('Версия: 1.0.0', "WHISPER", nil, COUNT);
-        SendChatMessage(texts.stats.str..": "..stats.str.." "..texts.stats.ag..": "..stats.ag.." "..texts.stats.snp..": "..stats.snp, "WHISPER", nil, COUNT);
-        SendChatMessage(texts.stats.mg..": "..stats.mg.." "..texts.stats.body..": "..stats.body.." "..texts.stats.moral..": "..stats.moral, "WHISPER", nil, COUNT);
-        SendChatMessage(texts.stats.level..": "..progress.lvl.." "..texts.stats.expr..": "..progress.expr.." "..texts.stats.avaliable..": "..params.points, "WHISPER", nil, COUNT);
-        SendChatMessage("ХП: "..params.health, "WHISPER", nil, COUNT);
-        SendChatMessage("Щит: "..params.shield, "WHISPER", nil, COUNT);
-        if (flags.isInBattle == 0) then
-            SendChatMessage("Не в бою", "WHISPER", nil, COUNT);
-        else
-            SendChatMessage("В бою", "WHISPER", nil, COUNT);
-        end;
-    end;
-    if (PREFIX == 'S4') then
-        COUNT = tonumber(COUNT, 10);
-        if (params.health + COUNT <= 3 + math.floor(stats.body / 20)) then
-            params.health = params.health + COUNT;
-            if (params.health < 0) then params.health = 0; end;
-            HP_TEXT:SetText(params.health);
-            if (COUNT < 0) then 
-                print('Вы потеряли '..math.abs(COUNT)..' ХП')
+        end,
+        set_level = function(level)
+            local level = tonumber(level, 10);
+            local shouldClearParams = level < progress.lvl;
+            progress.lvl = level;
+            print('СИСТЕМА: Уровень установлен на '..progress.lvl);
+            neededExpr = progress.lvl * 1000;
+            progress.expr = 0;
+            if shouldClearParams then clearTalantes(); end;
+            updateStats();
+        end,
+        get_info = function(DMName)
+            SendChatMessage('Версия: 1.0.0', "WHISPER", nil, DMName);
+            SendChatMessage(texts.stats.str..": "..stats.str.." "..texts.stats.ag..": "..stats.ag.." "..texts.stats.snp..": "..stats.snp, "WHISPER", nil, DMName);
+            SendChatMessage(texts.stats.mg..": "..stats.mg.." "..texts.stats.body..": "..stats.body.." "..texts.stats.moral..": "..stats.moral, "WHISPER", nil, DMName);
+            SendChatMessage(texts.stats.level..": "..progress.lvl.." "..texts.stats.expr..": "..progress.expr.." "..texts.stats.avaliable..": "..params.points, "WHISPER", nil, DMName);
+            SendChatMessage("ХП: "..params.health, "WHISPER", nil, DMName);
+            SendChatMessage("Щит: "..params.shield, "WHISPER", nil, DMName);
+            if (flags.isInBattle == 0) then
+                SendChatMessage("Не в бою", "WHISPER", nil, DMName);
             else
-                print('Вы получили '..math.abs(COUNT)..' ХП')
+                SendChatMessage("В бою", "WHISPER", nil, DMName);
             end;
-            if (params.health == 0) then 
-                print('Вы не можете продолжать бой');
-                SendChatMessage('(( Выведен из боя ))');
+        end,
+        mod_hp = function(health)
+            local health = tonumber(health, 10);
+            if (params.health + health <= 3 + math.floor(stats.body / 20)) then
+                params.health = params.health + health;
+                if (params.health < 0) then params.health = 0; end;
+                HP_TEXT:SetText(params.health);
+                if (health < 0) then 
+                    print('Вы потеряли '..math.abs(health)..' ХП')
+                else
+                    print('Вы получили '..math.abs(health)..' ХП')
+                end;
+                if (params.health == 0) then 
+                    print('Вы не можете продолжать бой');
+                    SendChatMessage('(( Выведен из боя ))');
+                end;
+            else
+                print ('Вам пытались выдать ' ..math.abs(health).. ' ХП, но ваше максимальное значение - ' ..3 + math.floor(stats.body / 20));
+                print ('Значение здоровья было установлено в макс., лишние ХП - уничтожены');
+                params.health = calculateHealth(stats);
+                HP_TEXT:SetText(params.health);
             end;
-        else
-            print ('Вам пытались выдать ' ..math.abs(COUNT).. ' ХП, но ваше максимальное значение - ' ..3 + math.floor(stats.body / 20));
-            print ('Значение здоровья было установлено в макс., лишние ХП - уничтожены');
+        end,
+        change_battle_state = function(battleState)
+            local battleState = tonumber(battleState, 10);
+            if (battleState == 0) then
+                print('Вы вышли из режима боя');
+                flags.isInBattle = 0;
+            else
+                print('Вы вошли в режим боя');
+                flags.isInBattle = 1;
+            end;
+        end,
+        restore_hp = function()
             params.health = calculateHealth(stats);
+            print('Ваши ХП были восстановлены');
             HP_TEXT:SetText(params.health);
-        end;
-    end;
-    if (PREFIX == 'S5') then
-        COUNT = tonumber(COUNT, 10);
-        if (COUNT == 0) then
-            print('Вы вышли из режима боя');
-            flags.isInBattle = 0;
-        else
-            print('Вы вошли в режим боя');
-            flags.isInBattle = 1;
-        end;
-    end;
-    if (PREFIX == 'S6') then
-        params.health = calculateHealth(stats);
-        print('Ваши ХП были восстановлены');
-        HP_TEXT:SetText(params.health);
-    end;
-    if (PREFIX == 'S7') then
-        local _type, number = strsplit("_", COUNT);
-        PlayMusic("Interface\\AddOns\\STIKSystem\\MUSIC\\".._type.."\\"..number..".mp3");
-    end;
-    if (PREFIX == 'S8') then
-        StopMusic();
-    end;
-    if (PREFIX == 'S9') then
-        COUNT = tonumber(COUNT, 10);
-        params.shield = params.shield + COUNT;
-        if (params.shield < 0) then params.shield = 0; end;
-        SHIELD_TEXT:SetText(params.shield);
-        if (COUNT < 0) then 
-            print('Вы потеряли '..math.abs(COUNT)..' пункт(-ов) барьера')
-        else
-            print('Вы получили '..math.abs(COUNT)..' пункт(-ов) барьера')
-        end;
-        if (params.shield == 0) then print('Вы лишились барьера!'); end;
-    end;
-    if (PREFIX == 'S10') then
-        DAMAGE = tonumber(COUNT, 10);
-        if (params.shield >= DAMAGE) then
-            params.shield = params.shield - DAMAGE;
-            print('Вы получили '..DAMAGE.. ' урона. Он был поглощён щитом');
+        end,
+        play_music = function(musicName)
+            local _type, number = strsplit("_", musicName);
+            PlayMusic("Interface\\AddOns\\STIKSystem\\MUSIC\\".._type.."\\"..number..".mp3");
+        end,
+        stop_music = function(musicName)
+            StopMusic();
+        end,
+        mod_barrier = function(barrierScore)
+            local score = tonumber(barrierScore, 10);
+            params.shield = params.shield + score;
+            if (params.shield < 0) then params.shield = 0; end;
             SHIELD_TEXT:SetText(params.shield);
-            if (params.shield == 0) then print('Вы потеряли наложенный на вас щит!'); end;
-        elseif (params.shield > 0 and params.shield - DAMAGE < 0) then
-            local afterShieldDamage = math.abs(params.shield - DAMAGE);
-            print('Вы получили '..DAMAGE..' урона. '..params.shield..' единиц были поглощены щитом');
-            params.shield = 0;
-            params.health = params.health - afterShieldDamage;
-            if (params.health < 0) then params.health = 0; end;
-            print(afterShieldDamage..' урона прошли через барьер, и нанесли вам повреждения');
-            if (params.health == 0) then 
-                print('Вы не можете продолжать бой');
-                SendChatMessage('(( Выведен из боя ))');
+            if (score < 0) then 
+                print('Вы потеряли '..math.abs(score)..' пункт(-ов) барьера')
+            else
+                print('Вы получили '..math.abs(score)..' пункт(-ов) барьера')
             end;
-            HP_TEXT:SetText(params.health);
-            SHIELD_TEXT:SetText(params.shield);
-        elseif (params.shield == 0 and params.health >= 0) then
-            params.health = params.health - math.abs(DAMAGE);
-            print('Вы получили '..DAMAGE..' урона.');
-            if (params.health < 0) then params.health = 0; end;
-            if (params.health == 0) then 
-                print('Вы не можете продолжать бой');
-                SendChatMessage('(( Выведен из боя ))');
+            if (params.shield == 0) then print('Вы лишились барьера!'); end;
+        end,
+        damage = function (points)
+            local dmg = tonumber(points, 10);
+            if (params.shield >= dmg) then
+                params.shield = params.shield - dmg;
+                print('Вы получили '..dmg.. ' урона. Он был поглощён щитом');
+                SHIELD_TEXT:SetText(params.shield);
+                if (params.shield == 0) then print('Вы потеряли наложенный на вас щит!'); end;
+            elseif (params.shield > 0 and params.shield - dmg < 0) then
+                local afterShieldDamage = math.abs(params.shield - dmg);
+                print('Вы получили '..dmg..' урона. '..params.shield..' единиц были поглощены щитом');
+                params.shield = 0;
+                params.health = params.health - afterShieldDamage;
+                if (params.health < 0) then params.health = 0; end;
+                print(afterShieldDamage..' урона прошли через барьер, и нанесли вам повреждения');
+                if (params.health == 0) then 
+                    print('Вы не можете продолжать бой');
+                    SendChatMessage('(( Выведен из боя ))');
+                end;
+                HP_TEXT:SetText(params.health);
+                SHIELD_TEXT:SetText(params.shield);
+            elseif (params.shield == 0 and params.health >= 0) then
+                params.health = params.health - math.abs(dmg);
+                print('Вы получили '..dmg..' урона.');
+                if (params.health < 0) then params.health = 0; end;
+                if (params.health == 0) then 
+                    print('Вы не можете продолжать бой');
+                    SendChatMessage('(( Выведен из боя ))');
+                end;
+                HP_TEXT:SetText(params.health);
             end;
-            HP_TEXT:SetText(params.health);
-        end;
-    end;
-    if (PREFIX == 'S11') then
-        local _type, number = strsplit("_", COUNT);
-        PlaySoundFile("Interface\\AddOns\\STIKSystem\\EFFECTS\\".._type.."\\"..number..".mp3", "Ambience");    
-    end;
-    if (PREFIX == 'SK') then
-        ForceQuit();
-    end;
+        end,
+        kick = function()
+            ForceQuit();
+        end,
+        play_effect = function(effect)
+            local _type, number = strsplit("_", effect);
+            PlaySoundFile("Interface\\AddOns\\STIKSystem\\EFFECTS\\".._type.."\\"..number..".mp3", "Ambience")
+        end,
+        invite_to_plot = function(plotInfo)
+            if (PopUpFrame and PopUpFrame:IsVisible()) then
+                PopUpFrame:Hide();
+            end;
+            PlaySound("LEVELUPSOUND", "SFX");
+
+            local meta, title, description = strsplit('~', plotInfo);
+            local master = strsplit('-', meta);
+
+            PopUpFrame = CreateFrame("Frame", "PopUpFrame", UIParent);
+                PopUpFrame:Show();
+                PopUpFrame:EnableMouse();
+                PopUpFrame:SetWidth(396);
+                PopUpFrame:SetHeight(396);
+                PopUpFrame:SetToplevel(true);
+                PopUpFrame:SetBackdropColor(0, 0, 0, 1);
+                PopUpFrame:SetFrameStrata("FULLSCREEN_DIALOG");
+                PopUpFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0);
+                PopUpFrame:SetBackdrop({
+                    bgFile = "Interface\\AddOns\\STIKSystem\\IMG\\popup.blp",
+                    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+                    tile = false, tileSize = 32, edgeSize = 32,
+                    insets = { left = 12, right = 12, top = 12, bottom = 12 },
+                });
+
+            local PopUpTitle = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpTitle:SetPoint("CENTER", PopUpFrame, "TOP", 0, -35);
+                PopUpTitle:SetText('Приглашение');
+                PopUpTitle:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE, MONOCHROME");
+                PopUpTitle:Show();
+                
+            local PopUpInfo = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpInfo:SetWidth(348);
+                PopUpInfo:SetPoint("TOP", PopUpFrame, "TOP", 0, -70);
+                PopUpInfo:SetText('Ведущий '..master..' предлагает вам стать участником сюжета');
+                PopUpInfo:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME");
+                PopUpInfo:Show();
+
+            local PopUpPlot = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpPlot:SetWidth(348);
+                PopUpPlot:SetPoint("TOP", PopUpFrame, "TOP", 0, -120);
+                PopUpPlot:SetText('"'..title..'"');
+                PopUpPlot:SetTextColor(0.901, 0.494, 0.133, 1);
+                PopUpPlot:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE, MONOCHROME");
+                PopUpPlot:Show();
+
+            local PopUpDescription = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpDescription:SetWidth(348);
+                PopUpDescription:SetPoint("TOP", PopUpFrame, "TOP", 0, -160);
+                PopUpDescription:SetText(description);
+                PopUpDescription:SetTextColor(0.7, 0.7, 0.7, 1);
+                PopUpDescription:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE, MONOCHROME");
+                PopUpDescription:Show();
+
+            local PopUpSubmit = CreateFrame("Button", "PopUpSubmit", PopUpFrame, "UIPanelButtonTemplate");
+                PopUpSubmit:SetPoint("BOTTOMRIGHT", PopUpFrame, "BOTTOMRIGHT", -36, 36);
+                PopUpSubmit:SetWidth(120);
+                PopUpSubmit:SetHeight(32);
+                PopUpSubmit:SetText('Присоединиться');
+                PopUpSubmit:RegisterForClicks("AnyUp");
+                PopUpSubmit:SetScript('OnClick', function()
+                    SendAddonMessage('STIK_PLAYER_ANSWER', 'invite_accept&'..UnitName('player')..' '..meta, "WHISPER", master);
+                    print('Вы присоединились к сюжету "'..title..'"');
+                    PopUpFrame:Hide();
+                end)
+
+            local PopUpDecline = CreateFrame("Button", "PopUpSubmit", PopUpFrame, "UIPanelButtonTemplate");
+                PopUpDecline:SetPoint("BOTTOMLEFT", PopUpFrame, "BOTTOMLEFT", 36, 36);
+                PopUpDecline:SetWidth(120);
+                PopUpDecline:SetHeight(32);
+                PopUpDecline:SetText('Отказать');
+                PopUpDecline:RegisterForClicks("AnyUp");
+                PopUpDecline:SetScript('OnClick', function()
+                    SendAddonMessage('STIK_PLAYER_ANSWER', 'invite_decline&'..UnitName('player')..' '..meta, "WHISPER", master);
+                    print('Вы отказались присоединиться к сюжету "'..title..'"');
+                    PopUpFrame:Hide();
+                end)
+        end,
+    };
+
+    commandConnector[COMMAND](VALUE);
 end;
 
 function clearTalantes()
