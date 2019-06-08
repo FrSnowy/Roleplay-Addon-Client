@@ -249,29 +249,33 @@ function onAddonReady()
             local flags = playerContext.flags;
             local progress = playerContext.progress;
             local params = playerContext.params;
-            if (flags.isInBattle == 0) then
-                local was = stat;
-                if job == texts.jobs.add then
-                    if (stat < 60 and stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then
-                        stat = stat + 1;
-                    end
-                end
-                if job == texts.jobs.remove then
-                    if (stat > 0) then
-                        stat = stat - 1;
-                    end
-                end
-                if job == texts.jobs.clear then
-                    stat = 0;
-                end
-                local diff = was - stat;
-                params.points = params.points + diff;
-                StatText_Avl:SetText(texts.stats.avaliable..": "..params.points);
-                return stat;
-            else
-                print(texts.err.battle)
+
+            local isInBattle = not(flags.isInBattle == 0);
+            
+            if (isInBattle) then
+                print(texts.err.battle);
                 return stat;
             end;
+
+            local prevStatValue = stat;
+            local jobConnector = {
+                [texts.jobs.add] = function()
+                    if (stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then return stat + 1;
+                    else return stat; end;
+                end,
+                [texts.jobs.remove] = function()
+                    if (stat > 0) then return stat - 1;
+                    else return 0; end;
+                end,
+                [texts.jobs.clear] = function()
+                    return 0;
+                end,
+            };
+
+            stat = jobConnector[job]();
+            params.points = params.points - (stat - prevStatValue);
+            StatPanel.Avl:SetText(texts.stats.avaliable..": "..params.points);
+            return stat;
         end,
         registerStat = function (settings, playerContext)
             local stats = playerContext.stats;
@@ -316,7 +320,7 @@ function onAddonReady()
         
             ClearButton:SetScript("OnClick",
                 function()
-                    stats[settings.stat] = helpers.modifyStat(texts.jobs.clear, stats[settings.stat], currentContext);
+                    stats[settings.stat] = helpers.modifyStat(texts.jobs.clear, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
                 end
             );
@@ -615,7 +619,7 @@ function onAddonReady()
                     for index, stat in pairs(statsToPanel) do
                         statPanel["stat_"..stat.name] = helpers.registerStat({
                             parent = statPanel, stat = stat.name, coords = stat.coords
-                        }, currentContext);
+                        }, playerContext);
                     end;
                 end;
 
