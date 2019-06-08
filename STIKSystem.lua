@@ -41,6 +41,7 @@ local texts = {
     settings = "Настройки",
     err = {
         battle = "Нельзя изменить значение характеристики в процессе боя",
+        hashIsWrong = "Кажется, параметры игрока были изменены из файла игры. Все параметры сброшены к нулю.",
     },
     canBeAttacked = {
         ok = "Цель может быть атакована в ближнем бою",
@@ -95,6 +96,54 @@ function getPlayerContext(playerInfo)
     else
         return playerInfo[playerInfo.currentPlot];
     end;
+end;
+
+function STIKSortTable(dict)
+    local keys = { };
+    for key in pairs(dict) do table.insert(keys, key) end;
+    table.sort(keys)
+
+    local sortedDict = { };
+    for _, key in ipairs(keys) do sortedDict[key] = dict[key] end;
+    return sortedDict;
+end;
+
+function STIKStringHash(text)
+    local counter = 1
+    local len = string.len(text)
+    for i = 1, len, 3 do 
+      counter = math.fmod(counter*8161, 4294967279) +
+          (string.byte(text,i)*16776193) +
+          ((string.byte(text,i+1) or (len-i+256))*8372226) +
+          ((string.byte(text,i+2) or (len-i+256))*3932164)
+    end
+    return math.fmod(counter, 4294967291)
+end
+
+function STIKStatHash(playerContext)
+    local getDictionaryAsString = function (dict)
+        local dictString = "";
+        for key, value in pairs(dict) do
+            dictString = dictString.."&"..key.."="..value
+        end;
+
+        return dictString;
+    end;
+    
+    local statString = getDictionaryAsString(STIKSortTable(playerContext.stats));
+    local flagsString = getDictionaryAsString(STIKSortTable(playerContext.flags));
+    local armorString = getDictionaryAsString(STIKSortTable(playerContext.armor));
+    local progressString = getDictionaryAsString(STIKSortTable(playerContext.progress));
+    local paramsString = getDictionaryAsString(STIKSortTable(playerContext.params));
+
+    local summaryString = statString..flagsString..armorString..progressString..paramsString;
+    return STIKStringHash(summaryString);
+end;
+
+function IsHashOK(playerContext)
+    local hashofStats = STIKStatHash(playerContext);
+    local hashOfCtx = playerContext.hash;
+    return tonumber(hashofStats) == tonumber(hashOfCtx);
 end;
 
 function onAddonReady()
@@ -296,6 +345,7 @@ function onAddonReady()
                 function()
                     stats[settings.stat] = helpers.modifyStat(texts.jobs.add, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.hash = tonumber(STIKStatHash(playerContext));
                 end
             );
     
@@ -309,6 +359,7 @@ function onAddonReady()
                 function()
                     stats[settings.stat] = helpers.modifyStat(texts.jobs.remove, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.hash = tonumber(STIKStatHash(playerContext));
                 end
             );
             
@@ -322,6 +373,7 @@ function onAddonReady()
                 function()
                     stats[settings.stat] = helpers.modifyStat(texts.jobs.clear, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.hash = tonumber(STIKStatHash(playerContext));
                 end
             );
     
@@ -427,6 +479,7 @@ function onAddonReady()
                         local slot = settings.parent.slot;
                         armor[slot] = settings.armorType;
                         settings.parent.connectedWith:SetText(texts.armor[slot]..": "..texts.armorTypes[armor[slot]]);
+                        playerContext.hash = tonumber(STIKStatHash(playerContext));
                     end
                 )
             end
@@ -813,11 +866,25 @@ function onAddonReady()
     };
 
     currentContext = getPlayerContext(playerInfo);
-
     if (currentContext == nil) then return end;
 
-    local generator = viewGenerator(currentContext);
+    if (not(IsHashOK(currentContext))) then
+        message(texts.err.hashIsWrong);
+        currentContext = {
+            hash = 2034843419,
+            stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
+            progress = { expr = 0, lvl = 1 },
+            flags = { isInBattle = 0 },
+            armor = { legs = "nothing", head = "nothing", body = "nothing" },
+            params = { shield = 0, points = 100, health = 3 },
+        }
 
+        currentContext.params.points = calculatePoints(currentContext.stats, currentContext.progress);
+        currentContext.params.health = calculateHealth(currentContext.stats);
+        playerInfo[playerInfo.currentPlot] = currentContext;
+    end;
+
+    local generator = viewGenerator(currentContext);
     --- Основная панель ---
     MainPanelSTIK = generator.mainPanel();
     --- Панель цели ---
@@ -1045,7 +1112,9 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 PopUpSubmit:SetScript('OnClick', function()
                     SendAddonMessage('STIK_PLAYER_ANSWER', 'invite_accept&'..UnitName('player')..' '..meta, "WHISPER", master);
                     print('Вы присоединились к сюжету "'..title..'"');
-                    playerInfo[meta] = { };
+                    playerInfo[meta] = {
+                        hash = 2034843419,
+                    };
                     playerInfo[meta].stats = { str = 0, moral = 0, mg = 0, body = 0, snp = 0, ag = 0 };
                     playerInfo[meta].progress = { expr = 0, lvl = 1 };
                     playerInfo[meta].params = {
