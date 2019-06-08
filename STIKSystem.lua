@@ -38,7 +38,13 @@ local texts = {
         clear = "clear",
     },
     dices = "Кубы",
-    settings = "Настройки",
+    settings = {
+        title = "Настройки",
+        getPlotInv = "Получать приглашения в сюжеты",
+        getEventInv = "Получать приглашения на события",
+        showDeclineMessages = "Показывать уведомления об отказе",
+        showRollInfo = "Показывать информацию о броске",
+    },
     err = {
         battle = "Нельзя изменить значение характеристики в процессе боя",
         hashIsWrong = "Кажется, параметры игрока были изменены из файла игры. Все параметры сброшены к нулю.",
@@ -91,10 +97,10 @@ function calculateHealth(stats)
 end
 
 function getPlayerContext(playerInfo)
-    if (playerInfo.currentPlot == nil) then
+    if (playerInfo.settings.currentPlot == nil) then
         return nil;
     else
-        return playerInfo[playerInfo.currentPlot];
+        return playerInfo[playerInfo.settings.currentPlot];
     end;
 end;
 
@@ -258,13 +264,6 @@ function onAddonReady()
             return rollButton;
         end,
         createDefaultFrame = function (settings)
-            --[[
-                parent,
-                size = { width, height },
-                aligment = { x, y },
-                point = { x, y },
-                title = content or nil
-            ]]--
             local defFrame = CreateFrame("Frame", "defaultFrame", settings.parent);
             defFrame:EnableMouse();
             defFrame:SetWidth(settings.size.width);
@@ -290,6 +289,27 @@ function onAddonReady()
             end;
 
             return defFrame;
+        end,
+        createCheckbox = function (settings)
+            local checkBoxFrame = CreateFrame("Frame", "cb-frame", settings.parent);
+            checkBoxFrame:EnableMouse();
+            checkBoxFrame:SetWidth(settings.wrapper.size.width);
+            checkBoxFrame:SetHeight(settings.wrapper.size.height);
+            checkBoxFrame:SetPoint(settings.wrapper.aligment.x, settings.parent, settings.wrapper.aligment.y, settings.wrapper.point.x, -settings.wrapper.point.y);
+            checkBoxFrame:SetToplevel(true);
+            checkBoxFrame:SetBackdropColor(0, 0, 0, 1);
+            checkBoxFrame:SetFrameStrata("FULLSCREEN_DIALOG");
+
+            checkBoxFrame.Checkbox = CreateFrame("CheckButton", "checkbox", checkBoxFrame, "ChatConfigCheckButtonTemplate");
+            checkBoxFrame.Checkbox:SetPoint(settings.checkbox.aligment.x, checkBoxFrame, settings.checkbox.aligment.y, settings.checkbox.point.x, settings.checkbox.point.y);
+            checkBoxFrame.Checkbox:SetWidth(settings.checkbox.size.width);
+            checkBoxFrame.Checkbox:SetHeight(settings.checkbox.size.height);
+            
+            checkBoxFrame.Content = checkBoxFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+            checkBoxFrame.Content:SetPoint("LEFT", checkBoxFrame.Checkbox, "LEFT", 36, 0);
+            checkBoxFrame.Content:SetText(settings.content);
+
+            return checkBoxFrame;
         end,
     }
     --- Функции, которые работают с контекстом ---
@@ -421,6 +441,16 @@ function onAddonReady()
                         maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
     
                         if (maxRoll == 0) then maxRoll = 1; end;
+                        if (playerInfo.settings.showRollInfo) then
+                            print('Бросок куба: '..texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                            print('Приведенный навык: '..math.ceil((diceSize * stats[usingStat])/100));
+                            print('Модификатор от размера куба: '..string.sub(1 / penaltyOfDice, 0, 5));
+                            print('Модификатор от ОЗ: '..modiferOfHealth);
+                            print('Бросок модифицированного навыка (без учета брони): '..rollWithoutArmor);
+                            print('Дополнительный модификатор от брони: '..penaltyOfArmor);
+                            print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
+                            print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
+                        end;
                         RandomRoll(minRoll, maxRoll);
                     end
                 );
@@ -534,6 +564,7 @@ function onAddonReady()
                                 swapPanel(DicePanel)
                                 if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
                                 if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
+                                if (SettingsPanel:IsVisible()) then swapPanel(SettingsPanel); end;
                             end
                         },
                     });
@@ -550,6 +581,7 @@ function onAddonReady()
                                 swapPanel(StatPanel)
                                 if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
                                 if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
+                                if (SettingsPanel:IsVisible()) then swapPanel(SettingsPanel); end;
                             end
                         },
                     });
@@ -566,6 +598,7 @@ function onAddonReady()
                                 swapPanel(ArmorPanel)
                                 if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
                                 if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
+                                if (SettingsPanel:IsVisible()) then swapPanel(SettingsPanel); end;
                             end
                         },
                     });
@@ -596,10 +629,16 @@ function onAddonReady()
                         coords = { x = 0, y = -2 * button.height - 40 },
                         image = "settings",
                         highlight = true,
-                        hint = texts.settings,
+                        hint = texts.settings.title,
                         functions = {
                             showHint = showPanelHint,
                             hideHint = hidePanelHint,
+                            swapPanel = function()
+                                swapPanel(SettingsPanel);
+                                if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
+                                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
+                                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
+                            end;
                         },
                     });
                     mainPanel.HP.Text = gui.createLine({
@@ -854,15 +893,113 @@ function onAddonReady()
                 registerArmorSlots(armorPanel);
                 return armorPanel;
             end,
+            settingsPanel = function(mainPanel)
+                local createSettingsPanel = function()
+                    local settingsPanel = gui.createDefaultFrame({
+                        parent = mainPanel,
+                        title = texts.settings.title,
+                        size = { width = 640, height = 290 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 70, y = 0 }
+                    });
+
+                    return settingsPanel;
+                end;
+
+                local createCheckboxPart = function(settingsPanel)
+                    settingsPanel.handlePlotInvites = gui.createCheckbox({
+                        parent = settingsPanel,
+                        content = texts.settings.getPlotInv,
+                        wrapper = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 16, y = 36 },
+                            size = { width = 290, height = 32 },
+                        },
+                        checkbox = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 0, y = 0 },
+                            size = { width = 32, height = 32 },
+                        },
+                    });
+                    settingsPanel.handlePlotInvites.Checkbox:SetChecked(playerInfo.settings.getPlotInvites);
+                    settingsPanel.handlePlotInvites.Checkbox:SetScript("OnClick", function(self)
+                        playerInfo.settings.getPlotInvites = self:GetChecked();
+                    end);
+
+                    settingsPanel.handleEventInvites = gui.createCheckbox({
+                        parent = settingsPanel,
+                        content = texts.settings.getEventInv,
+                        wrapper = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 16, y = 74 },
+                            size = { width = 290, height = 32 },
+                        },
+                        checkbox = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 0, y = 0 },
+                            size = { width = 32, height = 32 },
+                        },
+                    });
+                    settingsPanel.handleEventInvites.Checkbox:SetChecked(playerInfo.settings.getEventInvites);
+                    settingsPanel.handleEventInvites.Checkbox:SetScript("OnClick", function(self)
+                        playerInfo.settings.getEventInvites = self:GetChecked();
+                    end);
+
+                    settingsPanel.showRollInfo = gui.createCheckbox({
+                        parent = settingsPanel,
+                        content = texts.settings.showRollInfo,
+                        wrapper = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 16, y = 114 },
+                            size = { width = 290, height = 32 },
+                        },
+                        checkbox = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 0, y = 0 },
+                            size = { width = 32, height = 32 },
+                        },
+                    });
+                    settingsPanel.showRollInfo.Checkbox:SetChecked(playerInfo.settings.showRollInfo);
+                    settingsPanel.showRollInfo.Checkbox:SetScript("OnClick", function(self)
+                        playerInfo.settings.showRollInfo = self:GetChecked();
+                    end);
+
+                    settingsPanel.showDeclineMessages = gui.createCheckbox({
+                        parent = settingsPanel,
+                        content = texts.settings.showDeclineMessages,
+                        wrapper = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 16, y = 154 },
+                            size = { width = 290, height = 32 },
+                        },
+                        checkbox = {
+                            aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                            point = { x = 0, y = 0 },
+                            size = { width = 32, height = 32 },
+                        },
+                    });
+                    settingsPanel.showDeclineMessages.Checkbox:SetChecked(playerInfo.settings.showDeclineMessages);
+                    settingsPanel.showDeclineMessages.Checkbox:SetScript("OnClick", function(self)
+                        playerInfo.settings.showDeclineMessages = self:GetChecked();
+                    end);
+                end;
+
+                local settingsPanel = createSettingsPanel();
+                createCheckboxPart(settingsPanel);
+                return settingsPanel;
+            end,
         };
     end;
 
     playerInfo = playerInfo or {
-        currentPlot = nil,
         savedPlots = { },
         settings = {
-            getInvites = true,
-        }
+            currentPlot = nil,
+            getPlotInvites = true,
+            getEventInvites = true,
+            showDeclineMessages = true,
+            showRollInfo = false,
+        },
     };
 
     currentContext = getPlayerContext(playerInfo);
@@ -881,7 +1018,7 @@ function onAddonReady()
 
         currentContext.params.points = calculatePoints(currentContext.stats, currentContext.progress);
         currentContext.params.health = calculateHealth(currentContext.stats);
-        playerInfo[playerInfo.currentPlot] = currentContext;
+        playerInfo[playerInfo.settings.currentPlot] = currentContext;
     end;
 
     local generator = viewGenerator(currentContext);
@@ -895,6 +1032,8 @@ function onAddonReady()
     DicePanel = generator.dicePanel(MainPanelSTIK);
     --- Панель брони ---
     ArmorPanel = generator.armorPanel(MainPanelSTIK);
+    --- Панель настроек ---
+    SettingsPanel = generator.settingsPanel(MainPanelSTIK);
 end;
 
 function onDMSaySomething(prefix, msg, tp, sender)
@@ -1050,13 +1189,19 @@ function onDMSaySomething(prefix, msg, tp, sender)
             PlaySoundFile("Interface\\AddOns\\STIKSystem\\EFFECTS\\".._type.."\\"..number..".mp3", "Ambience")
         end,
         invite_to_plot = function(plotInfo)
+            local meta, title, description = strsplit('~', plotInfo);
+            local master = strsplit('-', meta);
+
+            if (not(playerInfo.settings.getPlotInvites)) then
+                if (playerInfo.settings.showDeclineMessages) then
+                    print('Приглашение на участие в сюжете "'..title..'" было автоматически отклонено');
+                end;
+                return;
+            end;
             if (PopUpFrame and PopUpFrame:IsVisible()) then
                 PopUpFrame:Hide();
             end;
             PlaySound("LEVELUPSOUND", "SFX");
-
-            local meta, title, description = strsplit('~', plotInfo);
-            local master = strsplit('-', meta);
 
             PopUpFrame = CreateFrame("Frame", "PopUpFrame", UIParent);
                 PopUpFrame:Show();
@@ -1112,22 +1257,25 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 PopUpSubmit:SetScript('OnClick', function()
                     SendAddonMessage('STIK_PLAYER_ANSWER', 'invite_accept&'..UnitName('player')..' '..meta, "WHISPER", master);
                     print('Вы присоединились к сюжету "'..title..'"');
-                    playerInfo[meta] = {
-                        hash = 2034843419,
-                    };
-                    playerInfo[meta].stats = { str = 0, moral = 0, mg = 0, body = 0, snp = 0, ag = 0 };
-                    playerInfo[meta].progress = { expr = 0, lvl = 1 };
-                    playerInfo[meta].params = {
-                        shield = 0,
-                        points = calculatePoints(playerInfo[meta].stats, playerInfo[meta].progress),
-                        health = calculateHealth(playerInfo[meta].stats)
-                    };
-                    playerInfo[meta].armor = { legs = "nothing", body = "nothing", head = "nothing" };
-                    playerInfo[meta].flags = { isInBattle = 0 };
-                    playerInfo.savedPlots[meta] = {
-                        name = title,
-                        content = description,
-                    };
+                    if (not(playerInfo[meta])) then
+                        playerInfo[meta] = {
+                            hash = 2034843419,
+                        };
+                        playerInfo[meta].stats = { str = 0, moral = 0, mg = 0, body = 0, snp = 0, ag = 0 };
+                        playerInfo[meta].progress = { expr = 0, lvl = 1 };
+                        playerInfo[meta].params = {
+                            shield = 0,
+                            points = calculatePoints(playerInfo[meta].stats, playerInfo[meta].progress),
+                            health = calculateHealth(playerInfo[meta].stats)
+                        };
+                        playerInfo[meta].armor = { legs = "nothing", body = "nothing", head = "nothing" };
+                        playerInfo[meta].flags = { isInBattle = 0 };
+                        playerInfo.savedPlots[meta] = {
+                            name = title,
+                            content = description,
+                        };
+                    else print('Вы уже участвовали в этом сюжете. Характеристики были загружены.');
+                    end;
                     PopUpFrame:Hide();
                 end)
 
