@@ -44,6 +44,10 @@ local texts = {
         getEventInv = "Получать приглашения на события",
         showDeclineMessages = "Показывать уведомления об отказе",
         showRollInfo = "Показывать информацию о броске",
+        parameters = "Параметры",
+        parts = "Сохраненные сюжеты",
+        plot = "Сюжет",
+        removePlot = "Удалить",
     },
     err = {
         battle = "Нельзя изменить значение характеристики в процессе боя",
@@ -192,8 +196,8 @@ function onAddonReady()
         createDefaultButton = function(settings)
             local function defaultButtonSettings(view)
                 view:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
-                view:SetHeight(16);
-                view:SetWidth(14);
+                view:SetHeight((settings.size and settings.size.height) or 16);
+                view:SetWidth((settings.size and settings.size.width) or 14);
                 view:SetText(settings.content);
                 view:RegisterForClicks("AnyUp");
             end
@@ -310,6 +314,28 @@ function onAddonReady()
             checkBoxFrame.Content:SetText(settings.content);
 
             return checkBoxFrame;
+        end,
+        createPlotView = function (settings)
+            local plotView = CreateFrame("Button", "AddPlotPanel", settings.parent);
+            plotView:EnableMouse();
+            plotView:SetWidth(settings.size.width);
+            plotView:SetHeight(settings.size.height);
+            plotView:SetToplevel(true);
+            plotView:SetBackdropColor(0, 0, 0, 1);
+            plotView:SetFrameStrata("FULLSCREEN_DIALOG");
+            plotView:SetPoint("TOPLEFT", settings.parent, "TOPLEFT", settings.point.x, -settings.point.y);
+            plotView:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\plot-background.blp");
+            plotView:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\plot-background.blp");
+
+            plotView.Text = plotView:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+            plotView.Text:SetPoint("LEFT", plotView, "LEFT", 16, 0);
+            if (settings.id == playerInfo.settings.currentPlot) then
+                plotView.Text:SetTextColor(0.901, 0.494, 0.133, 1);
+            end;
+            plotView.Text:SetText(settings.text);
+            plotView:SetScript("OnClick", settings.clickHandler);
+
+            return plotView;
         end,
     }
     --- Функции, которые работают с контекстом ---
@@ -898,21 +924,27 @@ function onAddonReady()
                     local settingsPanel = gui.createDefaultFrame({
                         parent = mainPanel,
                         title = texts.settings.title,
-                        size = { width = 640, height = 290 },
+                        size = { width = 580, height = 290 },
                         aligment = { x = "LEFT", y = "LEFT" },
                         point = { x = 70, y = 0 }
                     });
+
+                    settingsPanel:Hide();
 
                     return settingsPanel;
                 end;
 
                 local createCheckboxPart = function(settingsPanel)
+                    local checkboxTitle = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                    checkboxTitle:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 20, -56);
+                    checkboxTitle:SetText(texts.settings.parameters);
+
                     settingsPanel.handlePlotInvites = gui.createCheckbox({
                         parent = settingsPanel,
                         content = texts.settings.getPlotInv,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                            point = { x = 16, y = 36 },
+                            point = { x = 16, y = 76 },
                             size = { width = 290, height = 32 },
                         },
                         checkbox = {
@@ -931,7 +963,7 @@ function onAddonReady()
                         content = texts.settings.getEventInv,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                            point = { x = 16, y = 74 },
+                            point = { x = 16, y = 114 },
                             size = { width = 290, height = 32 },
                         },
                         checkbox = {
@@ -950,7 +982,7 @@ function onAddonReady()
                         content = texts.settings.showRollInfo,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                            point = { x = 16, y = 114 },
+                            point = { x = 16, y = 154 },
                             size = { width = 290, height = 32 },
                         },
                         checkbox = {
@@ -969,7 +1001,7 @@ function onAddonReady()
                         content = texts.settings.showDeclineMessages,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                            point = { x = 16, y = 154 },
+                            point = { x = 16, y = 194 },
                             size = { width = 290, height = 32 },
                         },
                         checkbox = {
@@ -984,8 +1016,143 @@ function onAddonReady()
                     end);
                 end;
 
+                local createPlotsPart = function(settingsPanel)
+                    if (not(settingsPanel.Title)) then
+                        settingsPanel.Title = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                        settingsPanel.Title:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 290, -56);
+                        settingsPanel.Title:SetText(texts.settings.parts);
+                    end;
+
+                    settingsPanel.Plots = settingsPanel.Plots or { };
+                    settingsPanel.plotForScreen = 5;
+                    settingsPanel.plotsOffset = settingsPanel.plotsOffset or 0;
+
+                    if (#settingsPanel.Plots > 0) then
+                        for index, plotView in pairs(settingsPanel.Plots) do
+                            plotView:Hide();
+                            settingsPanel.Plots[index] = nil;
+                        end;
+                    end;
+
+                    local plotIndex = 0;
+                    for plotID, plot in pairs(playerInfo.savedPlots) do
+                        if (not(plotIndex < settingsPanel.plotsOffset)) then
+                            local plotView = gui.createPlotView({
+                                id = plotID,
+                                parent = settingsPanel,
+                                size = { width = 240, height = 24 },
+                                point = { x = 290, y = 80 + 32 * (plotIndex - settingsPanel.plotsOffset) },
+                                text = plot.name;
+                                clickHandler = function()
+                                    settingsPanel.createSinglePlot(plotID);
+                                end,
+                            });
+                            table.insert(settingsPanel.Plots, plotView);
+                        end;
+                        plotIndex = plotIndex + 1;
+                        if (plotIndex == settingsPanel.plotForScreen + settingsPanel.plotsOffset) then break end;
+                    end;
+                end;
+
+                local createScrollBar = function(settingsPanel, plotCount)
+                    local scrollSize = plotCount - settingsPanel.plotForScreen;
+                    settingsPanel.Scrollbar = CreateFrame("Slider", nil, settingsPanel, "UIPanelScrollBarTemplate")
+                    settingsPanel.Scrollbar:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 540, -90);
+                    settingsPanel.Scrollbar:SetSize(30, 128);
+                    settingsPanel.Scrollbar:SetMinMaxValues(0, scrollSize);
+                    settingsPanel.Scrollbar:SetValueStep(1);
+                    settingsPanel.Scrollbar:SetValue(settingsPanel.plotsOffset);
+
+                    settingsPanel.Scrollbar:SetScript("OnValueChanged", function(self, value)
+                        settingsPanel.plotsOffset = value;
+                        createPlotsPart(settingsPanel);
+                    end);
+                end;
+
                 local settingsPanel = createSettingsPanel();
                 createCheckboxPart(settingsPanel);
+                createPlotsPart(settingsPanel);
+
+                local plotCount = 0;
+                for plotID, plot in pairs(playerInfo.savedPlots) do plotCount = plotCount + 1; end;
+
+                if (plotCount > settingsPanel.plotForScreen) then
+                    createScrollBar(settingsPanel, plotCount);
+                end;
+
+                settingsPanel.createSinglePlot = function(plotID)
+                    local currentPlot = playerInfo.savedPlots[plotID];
+                    if (settingsPanel.SinglePlot) then settingsPanel.SinglePlot:Hide();  end;
+                    settingsPanel.SinglePlot = gui.createDefaultFrame({
+                        parent = settingsPanel,
+                        title = texts.settings.plot,
+                        size = { width = 290, height = 290 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 570, y = 0 }
+                    });
+
+                    settingsPanel.SinglePlot.Title = settingsPanel.SinglePlot:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                    settingsPanel.SinglePlot.Title:SetPoint("CENTER", settingsPanel.SinglePlot, "TOP", 0, -60);
+                    settingsPanel.SinglePlot.Title:SetText('"'..currentPlot.name..'"');
+                    settingsPanel.SinglePlot.Title:SetTextColor(0.901, 0.494, 0.133, 1);
+                    settingsPanel.SinglePlot.Title:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME");
+
+                    settingsPanel.SinglePlot.Content = settingsPanel.SinglePlot:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                    settingsPanel.SinglePlot.Content:SetPoint("TOPLEFT", settingsPanel.SinglePlot, "TOPLEFT", 24, -90);
+                    settingsPanel.SinglePlot.Content:SetText(currentPlot.content);
+                    settingsPanel.SinglePlot.Content:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE, MONOCHROME");
+                    settingsPanel.SinglePlot.Content:SetWidth(240);
+
+                    settingsPanel.SinglePlot.CloseButton = gui.createDefaultButton({
+                        parent = settingsPanel.SinglePlot,
+                        direction = { x = "TOPRIGHT", y = "TOPRIGHT" },
+                        coords = { x = -16, y = -16 },
+                        size = { width = 24, height = 24 },
+                        content = 'x',
+                    });
+
+                    settingsPanel.SinglePlot.CloseButton:SetScript("OnClick", function()
+                        settingsPanel.SinglePlot:Hide();
+                        settingsPanel.SinglePlot = nil;
+                    end);
+
+                    settingsPanel.SinglePlot.DeleteButton = gui.createDefaultButton({
+                        parent = settingsPanel.SinglePlot,
+                        direction = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
+                        coords = { x = 24, y = 24 },
+                        size = { width = 96, height = 32 },
+                        content = texts.settings.removePlot,
+                    });
+
+                    settingsPanel.SinglePlot.DeleteButton:SetScript("OnClick", function()
+                        playerInfo.savedPlots[plotID] = nil;
+                        playerInfo[plotID] = nil;
+                        settingsPanel.SinglePlot:Hide();
+                        settingsPanel.SinglePlot = nil;
+                        
+                        local plotCount = 0;
+                        for plotID, plot in pairs(playerInfo.savedPlots) do plotCount = plotCount + 1; end;
+
+                        if (plotCount <= settingsPanel.plotForScreen) then
+                            settingsPanel.Scrollbar:Hide();
+                            settingsPanel.plotsOffset = 0;
+                        end;
+                        createPlotsPart(settingsPanel);
+                    end);
+                end;
+
+                settingsPanel.RefreshPlotList = function()
+                    local plotCount = 0;
+                    for plotID, plot in pairs(playerInfo.savedPlots) do plotCount = plotCount + 1; end;
+                    
+                    createPlotsPart(SettingsPanel);
+                    if (plotCount > SettingsPanel.plotForScreen) then
+                        createScrollBar(SettingsPanel, plotCount);
+                    else
+                        if (SettingsPanel.Scrollbar) then SettingsPanel.Scrollbar:Hide(); end;
+                    end;
+                end;
+
                 return settingsPanel;
             end,
         };
@@ -1276,6 +1443,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                         };
                     else print('Вы уже участвовали в этом сюжете. Характеристики были загружены.');
                     end;
+                    SettingsPanel:RefreshPlotList();
                     PopUpFrame:Hide();
                 end)
 
