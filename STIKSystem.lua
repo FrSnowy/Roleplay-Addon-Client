@@ -38,6 +38,7 @@ local texts = {
         clear = "clear",
     },
     dices = "Кубы",
+    settings = "Настройки",
     err = {
         battle = "Нельзя изменить значение характеристики в процессе боя",
     },
@@ -88,39 +89,15 @@ function calculateHealth(stats)
     return 3 + math.floor(stats.body / 20);
 end
 
+function getPlayerContext(playerInfo)
+    if (playerInfo.currentPlot == nil) then
+        return nil;
+    else
+        return playerInfo[playerInfo.currentPlot];
+    end;
+end;
+
 function onAddonReady()
-    stats = stats or {
-        str = Str or 0,
-        ag = Ag or 0,
-        snp = Snp or 0,
-        mg = Mg or 0,
-        body = Body or 0,
-        moral = Moral or 0,
-    };
-
-    progress = progress or {
-        lvl = Lvl or 1,
-        expr = Expr or 0,
-    };
-
-    params = params or {
-        health = calculateHealth(stats),
-        shield = 0,
-        points = calculatePoints(stats, progress),
-    };
-
-    armor = armor or {
-        head = 'nothing',
-        body = 'nothing',
-        legs = 'nothing',
-    };
-
-    flags = flags or {
-        isInBattle = inBattle or 0,
-    };
-
-    neededExpr = progress.lvl * 1000;
-
     -- Брать со знаком минус --
     -- Больше нуля - добавление, меньше - штраф --
     local armorPenalty = {
@@ -146,731 +123,707 @@ function onAddonReady()
             plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.1, moral = 0.1, luck = 0 },
         },
     };
-
-    local function modifyStat(job, stat)
-        if (flags.isInBattle == 0) then
-            local was = stat;
-            if job == texts.jobs.add then
-                if (stat < 60 and stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then
-                    stat = stat + 1;
-                end
-            end
-            if job == texts.jobs.remove then
-                if (stat > 0) then
-                    stat = stat - 1;
-                end
-            end
-            if job == texts.jobs.clear then
-                stat = 0;
-            end
-            local diff = was - stat;
-            params.points = params.points + diff;
-            StatText_Avl:SetText(texts.stats.avaliable..": "..params.points);
-            return stat;
-        else
-            print(texts.err.battle)
-            return stat;
-        end;
-    end;
-
-    local function createLine(settings)
-        local panel = settings.parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
-            panel:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
-            panel:SetText(settings.content);
-            panel:SetAlpha(0.85);
-            panel:Show();
-
-        return panel;
-    end
-
-    local function createDefaultButton(settings)
-        local function defaultButtonSettings(view)
-            view:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
-            view:SetHeight(16);
-            view:SetWidth(14);
-            view:SetText(settings.content);
-            view:RegisterForClicks("AnyUp");
-        end
-
-        local button = CreateFrame("Button", "defaultButton", settings.parent, "UIPanelButtonTemplate");
-        defaultButtonSettings(button);
-        return button;
-    end
-
-    local function registerMainButton(settings)
-
-        local function setButtonView(view)
-            view:SetSize(button.width, button.height);
-            view:SetPoint("CENTER", settings.parent, "CENTER", settings.coords.x, settings.coords.y);
-            view:RegisterForClicks("AnyUp");
-            view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-            if (settings.highlight) then
-                view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-            end
-            view:Show()
-        end
-
-        local function setButtonScripts(view)
-            view:SetScript("OnEnter", settings.functions.showHint);
-            view:SetScript("OnLeave", settings.functions.hideHint);
-            view:SetScript("OnClick", settings.functions.swapPanel);
-        end
-
-        local button = CreateFrame("Button", "MainPanelButton", settings.parent, "SecureHandlerClickTemplate");
-        button.hint = settings.hint;
-        setButtonView(button);
-        setButtonScripts(button);
-
-        return button;
-    end
-
-    local function registerStat(settings)
-        local panel = createLine({
-            parent = settings.parent,
-            content = texts.stats[settings.stat]..": "..stats[settings.stat],
-            coords = settings.coords,
-            direction = { x = "LEFT", y = "TOP" }
-        });
-
-        local AddButton = createDefaultButton({
-            parent = settings.parent, content = "+",
-            coords = { x = 45, y = settings.coords.y },
-            direction = { x = "LEFT", y = "TOP" }
-        });
-
-        AddButton:SetScript("OnClick",
-            function()
-                stats[settings.stat] = modifyStat(texts.jobs.add, stats[settings.stat]);
-                panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
-            end
-        );
-
-        local RemoveButton = createDefaultButton({
-            parent = settings.parent, content = "-",
-            coords = { x = 65, y = settings.coords.y },
-            direction = { x = "LEFT", y = "TOP" }
-        });
-        
-        RemoveButton:SetScript("OnClick",
-            function()
-                stats[settings.stat] = modifyStat(texts.jobs.remove, stats[settings.stat]);
-                panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
-            end
-        );
-        
-        local ClearButton = createDefaultButton({
-            parent = settings.parent, content = "0",
-            coords = { x = 85, y = settings.coords.y },
-            direction = { x = "LEFT", y = "TOP" }
-        });
+    --- Функции, которые работают с гуем без контекста ---
+    gui = {
+        createLine = function (settings)
+            local panel = settings.parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                panel:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
+                panel:SetText(settings.content);
+                panel:SetAlpha(0.85);
+                panel:Show();
     
-        ClearButton:SetScript("OnClick",
-            function()
-                stats[settings.stat] = modifyStat(texts.jobs.clear, stats[settings.stat]);
-                panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+            return panel;
+        end,
+        createDefaultButton = function(settings)
+            local function defaultButtonSettings(view)
+                view:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
+                view:SetHeight(16);
+                view:SetWidth(14);
+                view:SetText(settings.content);
+                view:RegisterForClicks("AnyUp");
             end
-        );
+    
+            local button = CreateFrame("Button", "defaultButton", settings.parent, "UIPanelButtonTemplate");
+            defaultButtonSettings(button);
+            return button;
+        end,
+        registerMainButton = function (settings)
+            local function setButtonView(view)
+                view:SetSize(button.width, button.height);
+                view:SetPoint("CENTER", settings.parent, "CENTER", settings.coords.x, settings.coords.y);
+                view:RegisterForClicks("AnyUp");
+                view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+                if (settings.highlight) then
+                    view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+                end
+                view:Show()
+            end
+    
+            local function setButtonScripts(view)
+                view:SetScript("OnEnter", settings.functions.showHint);
+                view:SetScript("OnLeave", settings.functions.hideHint);
+                view:SetScript("OnClick", settings.functions.swapPanel);
+            end
+    
+            local button = CreateFrame("Button", "MainPanelButton", settings.parent, "SecureHandlerClickTemplate");
+            button.hint = settings.hint;
+            setButtonView(button);
+            setButtonScripts(button);
+    
+            return button;
+        end,
+        registerDice = function (settings)
+            local function setDiceView(view)
+                view:SetSize(smallButton.width, smallButton.height);
+                view:SetPoint("CENTER", settings.views.parent, "CENTER", settings.coords.x, -10 + settings.coords.y);
+                view:RegisterForClicks("AnyUp");
+                view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+                view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+                view:Show()
+            end
 
-        return panel;
-    end
+            local function setDiceScripts(view)
+                view:SetScript("OnEnter", showPanelHint);
+                view:SetScript("OnLeave", hidePanelHint);
+                view:SetScript("OnClick",
+                    function()
+                        local prevStat = settings.views.menu.stat;
+                        settings.views.menu.stat = view.stat;
+    
+                        if ((prevStat == settings.views.menu.stat) and (settings.views.menu:IsVisible())) then 
+                            settings.views.menu:Hide();
+                        else
+                            settings.views.menu:SetPoint("LEFT", settings.views.main, "LEFT", 130, -10 + settings.coords.y);
+                            settings.views.menu:Show();
+                        end
+                    end
+                );
+            end
+    
+            local rollButton = CreateFrame("Button", "diceButton", settings.views.parent, "SecureHandlerClickTemplate")
+            rollButton.hint = settings.hint;
+            rollButton.stat = settings.stat;
+            setDiceView(rollButton);
+            setDiceScripts(rollButton);
+    
+            return rollButton;
+        end,
+        createDefaultFrame = function (settings)
+            --[[
+                parent,
+                size = { width, height },
+                aligment = { x, y },
+                point = { x, y },
+                title = content or nil
+            ]]--
+            local defFrame = CreateFrame("Frame", "defaultFrame", settings.parent);
+            defFrame:EnableMouse();
+            defFrame:SetWidth(settings.size.width);
+            defFrame:SetHeight(settings.size.height);
+            defFrame:SetToplevel(true);
+            defFrame:SetBackdropColor(0, 0, 0, 1);
+            defFrame:SetFrameStrata("FULLSCREEN_DIALOG");
+            defFrame:SetPoint(settings.aligment.x, settings.parent, settings.aligment.y, settings.point.x, settings.point.y);
+            defFrame:SetBackdrop({
+                bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+                edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+                tile = true, tileSize = 32, edgeSize = 32,
+                insets = { left = 12, right = 12, top = 12, bottom = 12 },
+            });
 
-    local function registerDice(settings)
+            if (not(settings.title == nil)) then
+                local defFrameTitle = gui.createLine({
+                    parent = defFrame,
+                    content = settings.title,
+                    coords = { x = 0, y = - 25 },
+                    direction = { x = "CENTER", y = "TOP" }
+                });
+            end;
 
-        local function setDiceView(view)
-            view:SetSize(smallButton.width, smallButton.height);
-            view:SetPoint("CENTER", settings.views.parent, "CENTER", settings.coords.x, -10 + settings.coords.y);
-            view:RegisterForClicks("AnyUp");
-            view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-            view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-            view:Show()
-        end
-
-        local function setDiceScripts(view)
-            view:SetScript("OnEnter", showPanelHint);
-            view:SetScript("OnLeave", hidePanelHint);
-            view:SetScript("OnClick",
+            return defFrame;
+        end,
+    }
+    --- Функции, которые работают с контекстом ---
+    helpers = {
+        modifyStat = function (job, stat, playerContext)
+            local flags = playerContext.flags;
+            local progress = playerContext.progress;
+            local params = playerContext.params;
+            if (flags.isInBattle == 0) then
+                local was = stat;
+                if job == texts.jobs.add then
+                    if (stat < 60 and stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then
+                        stat = stat + 1;
+                    end
+                end
+                if job == texts.jobs.remove then
+                    if (stat > 0) then
+                        stat = stat - 1;
+                    end
+                end
+                if job == texts.jobs.clear then
+                    stat = 0;
+                end
+                local diff = was - stat;
+                params.points = params.points + diff;
+                StatText_Avl:SetText(texts.stats.avaliable..": "..params.points);
+                return stat;
+            else
+                print(texts.err.battle)
+                return stat;
+            end;
+        end,
+        registerStat = function (settings, playerContext)
+            local stats = playerContext.stats;
+            local panel = gui.createLine({
+                parent = settings.parent,
+                content = texts.stats[settings.stat]..": "..stats[settings.stat],
+                coords = settings.coords,
+                direction = { x = "LEFT", y = "TOP" }
+            });
+    
+            local AddButton = gui.createDefaultButton({
+                parent = settings.parent, content = "+",
+                coords = { x = 45, y = settings.coords.y },
+                direction = { x = "LEFT", y = "TOP" }
+            });
+    
+            AddButton:SetScript("OnClick",
                 function()
-                    local prevStat = settings.views.menu.stat;
-                    settings.views.menu.stat = view.stat;
+                    stats[settings.stat] = helpers.modifyStat(texts.jobs.add, stats[settings.stat], playerContext);
+                    panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                end
+            );
+    
+            local RemoveButton = gui.createDefaultButton({
+                parent = settings.parent, content = "-",
+                coords = { x = 65, y = settings.coords.y },
+                direction = { x = "LEFT", y = "TOP" }
+            });
+            
+            RemoveButton:SetScript("OnClick",
+                function()
+                    stats[settings.stat] = helpers.modifyStat(texts.jobs.remove, stats[settings.stat], playerContext);
+                    panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                end
+            );
+            
+            local ClearButton = gui.createDefaultButton({
+                parent = settings.parent, content = "0",
+                coords = { x = 85, y = settings.coords.y },
+                direction = { x = "LEFT", y = "TOP" }
+            });
+        
+            ClearButton:SetScript("OnClick",
+                function()
+                    stats[settings.stat] = helpers.modifyStat(texts.jobs.clear, stats[settings.stat], currentContext);
+                    panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                end
+            );
+    
+            return panel;
+        end,
+        registerRoll = function (settings, playerContext)
+            local params = playerContext.params;
+            local stats = playerContext.stats;
+            local armor = playerContext.armor;
 
-                    if ((prevStat == settings.views.menu.stat) and (settings.views.menu:IsVisible())) then 
-                        settings.views.menu:Hide();
+            local menu = settings.parent;
+
+            local function setRollView(view)
+                view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
+                view:SetHeight(23);
+                view:SetWidth(50);
+                view:SetText("d"..settings.dice.size);
+                view:RegisterForClicks("AnyUp");
+            end
+
+            local function setRollScript(view)
+                view:SetScript("OnClick",
+                    function()
+                        local usingStat = menu.stat;
+                        local diceSize = settings.dice.size;
+                        if (usingStat == 'luck') then return RandomRoll(0, diceSize); end;
+
+                        local penaltyOfDice = settings.dice.penalty;
+                        local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
+                        if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
+    
+                        local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
+    
+                        local penaltyByArmor = {
+                            head = -armorPenalty.head[armor.head][usingStat],
+                            body = -armorPenalty.body[armor.body][usingStat],
+                            legs = -armorPenalty.legs[armor.legs][usingStat],
+                        };
+    
+                        local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
+                        local penaltyOfArmor = penaltyByArmor.head + penaltyByArmor.body + penaltyByArmor.legs;
+    
+                        local minRoll = rollWithoutArmor - math.ceil(rollWithoutArmor * penaltyOfArmor);
+                        local maxRoll = diceSize + rollWithoutArmor;
+                        maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
+    
+                        if (maxRoll == 0) then maxRoll = 1; end;
+                        RandomRoll(minRoll, maxRoll);
+                    end
+                );
+            end
+
+            local button = CreateFrame("Button", "rollButton", menu, "UIPanelButtonTemplate");
+            setRollView(button);
+            setRollScript(button);
+        end,
+        registerArmor = function (settings, playerContext)
+            local armor = playerContext.armor;
+            local armorLine = gui.createLine({
+                parent = settings.views.parent,
+                content = texts.armor[settings.slot]..": "..texts.armorTypes[armor[settings.slot]],
+                coords = settings.line.coords,
+                direction = settings.line.direction,
+            });
+    
+            local armorButton = gui.createDefaultButton({
+                parent = settings.views.parent,
+                content = ">",
+                coords = settings.button.coords,
+                direction = settings.button.direction,
+            });
+            armorButton:SetScript("OnClick",
+                function()
+                    local prevSlot = settings.views.armorMenu.slot;
+                    settings.views.armorMenu.slot = settings.slot;
+                    settings.views.armorMenu.connectedWith = armorLine;
+    
+                    if ((prevSlot == settings.views.armorMenu.slot) and (settings.views.armorMenu:IsVisible())) then 
+                        settings.views.armorMenu:Hide();
                     else
-                        settings.views.menu:SetPoint("LEFT", settings.views.main, "LEFT", 130, -10 + settings.coords.y);
-                        settings.views.menu:Show();
+                        settings.views.armorMenu:SetPoint("LEFT", settings.views.parent, "TOP", 70, settings.line.coords.y);
+                        settings.views.armorMenu:Show();
                     end
                 end
             );
+    
+            armorLine.button = armorButton;
+            return armorLine;
+        end,
+        registerArmorType = function (settings, playerContext)
+            local armor = playerContext.armor;
+            local function setArmorTypeView(view)
+                view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
+                view:SetHeight(23);
+                view:SetWidth(70);
+                view:SetText(texts.armorTypes[settings.armorType]);
+                view:RegisterForClicks("AnyUp");
+            end
+    
+            local function setArmorTypeScript(view)
+                view:SetScript("OnClick",
+                    function()
+                        local slot = settings.parent.slot;
+                        armor[slot] = settings.armorType;
+                        settings.parent.connectedWith:SetText(texts.armor[slot]..": "..texts.armorTypes[armor[slot]]);
+                    end
+                )
+            end
+    
+            local button = CreateFrame("Button", "rollButton", settings.parent, "UIPanelButtonTemplate");
+            setArmorTypeView(button);
+            setArmorTypeScript(button);
+    
+            return button;
         end
+    };
 
-        local rollButton = CreateFrame("Button", "diceButton", settings.views.parent, "SecureHandlerClickTemplate")
-        rollButton.hint = settings.hint;
-        rollButton.stat = settings.stat;
-        setDiceView(rollButton);
-        setDiceScripts(rollButton);
+    --- Генератор вьюшек ---
+    local viewGenerator = function (playerContext)
+        local progress = playerContext.progress;
+        local armor = playerContext.armor;
+        local stats = playerContext.stats;
+        local flags = playerContext.flags;
+        local params = playerContext.params;
+        local neededExpr = progress.lvl * 1000;
+        return {
+            mainPanel = function ()
+                local createMainPanel = function()
+                    return gui.createDefaultFrame({
+                        parent = UIParent,
+                        size = { width = 80, height = 290 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = -60, y = 80 },
+                    });
+                end;
+                local appendScripts = function(mainPanel)
+                    mainPanel:SetScript("OnEnter", function(self)
+                        self:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
+                    end);
+                    mainPanel:SetScript("OnLeave", function(self)
+                        local isAnyPanelVisible = StatPanel:IsVisible() or DicePanel:IsVisible() or ArmorPanel:IsVisible();
+                        if (not MouseIsOver(self) and not isAnyPanelVisible) then
+                            self:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
+                        end; 
+                    end);
+                end;
+                local createButtons = function(mainPanel)
+                    mainPanel.Roll = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = 3 * button.height + 10 },
+                        image = "dice_pve", highlight = true,
+                        hint = texts.dices,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                            swapPanel = function()
+                                swapPanel(DicePanel)
+                                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
+                                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
+                            end
+                        },
+                    });
+                    mainPanel.Stat = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = 2 * button.height },
+                        image = "stat",
+                        highlight = true,
+                        hint = texts.stats.stat,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                            swapPanel = function()
+                                swapPanel(StatPanel)
+                                if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
+                                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
+                            end
+                        },
+                    });
+                    mainPanel.Armor = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = button.height - 10 },
+                        image = "armor",
+                        highlight = true,
+                        hint = texts.stats.armor,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                            swapPanel = function()
+                                swapPanel(ArmorPanel)
+                                if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
+                                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
+                            end
+                        },
+                    });
+                    mainPanel.HP = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = -20 },
+                        image = "hp",
+                        highlight = false,
+                        hint = texts.stats.hp,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                        },
+                    });
+                    mainPanel.Shield = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = -button.height - 30 },
+                        image = "shield",
+                        highlight = false,
+                        hint = texts.stats.shield,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                        },
+                    });
+                    mainPanel.Settings = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = -2 * button.height - 40 },
+                        image = "settings",
+                        highlight = true,
+                        hint = texts.settings,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                        },
+                    });
+                    mainPanel.HP.Text = gui.createLine({
+                        parent = mainPanel.HP,
+                        content = params.health,
+                        coords = { x = 0, y = 0 },
+                        direction = { x = "CENTER", y = "CENTER" }
+                    });
+                    mainPanel.Shield.Text = gui.createLine({
+                        parent = mainPanel.Shield,
+                        content = params.shield,
+                        coords = { x = 0, y = 0 },
+                        direction = { x = "CENTER", y = "CENTER" }
+                    });
+                end;
+    
+                local mainPanel = createMainPanel();
+                appendScripts(mainPanel);
+                createButtons(mainPanel);
+    
+                return mainPanel;
+            end,
+            targetInfo = function()
+                local createTargetFrame = function ()
+                    return gui.createDefaultFrame({
+                        parent = TargetFrame,
+                        size = { width = TargetFrameHealthBar:GetWidth() + 20, height = 50 },
+                        aligment = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
+                        point = { x = -5, y = 5 },
+                    });
+                end;
 
-        return rollButton;
-    end
+                local createAttackableStatus = function(targetFrame)
+                    targetFrame.AttackablePanel = CreateFrame("Button", "targetInfoAttackable", targetFrame);
+                    targetFrame.AttackablePanel:EnableMouse(); 
+                    targetFrame.AttackablePanel:SetWidth(smallestButton.width);
+                    targetFrame.AttackablePanel:SetHeight(smallestButton.height);
+                    targetFrame.AttackablePanel:SetPoint("CENTER", targetFrame, "CENTER", 0, 0);
+                    targetFrame.AttackablePanel:SetScript("OnEnter", showPanelHint);
+                    targetFrame.AttackablePanel:SetScript("OnLeave", hidePanelHint);
+                end;
 
-    local function registerRoll(settings)
-        
-        local function setRollView(view)
-            view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
-            view:SetHeight(23);
-            view:SetWidth(50);
-            view:SetText("d"..settings.dice.size);
-            view:RegisterForClicks("AnyUp");
-        end
+                local targetFrame = createTargetFrame();
+                createAttackableStatus(targetFrame);
+                return targetFrame;
+            end,
+            statPanel = function (mainPanel)
+                local createStatPanel = function ()
+                    local statPanel = gui.createDefaultFrame({
+                        parent = mainPanel,
+                        title = texts.stats.stat,
+                        size = { width = 240, height = 260 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 70, y = 0 }
+                    });
+                    statPanel:Hide();
+                    return statPanel;
+                end;
 
-        local function setRollScript(view)
-            view:SetScript("OnClick",
-                function()
-                    local usingStat = Dice_MENU.stat;
-                    local diceSize = settings.dice.size;
-                    if (usingStat == 'luck') then return RandomRoll(0, diceSize); end;
+                local displayStats = function (statPanel)
+                    local statsToPanel = {
+                        { name = "str", coords = { x = -90, y = -50 } },
+                        { name = "ag", coords = { x = -90, y = -75 } },
+                        { name = "snp", coords = { x = -90, y = -100 } },
+                        { name = "mg", coords = { x = -90, y = -125 } },
+                        { name = "body", coords = { x = -90, y = -150 } },
+                        { name = "moral", coords = { x = -90, y = -175 } },
+                    };
+                
+                    for index, stat in pairs(statsToPanel) do
+                        statPanel["stat_"..stat.name] = helpers.registerStat({
+                            parent = statPanel, stat = stat.name, coords = stat.coords
+                        }, currentContext);
+                    end;
+                end;
 
-                    local penaltyOfDice = settings.dice.penalty;
-                    local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
-                    if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
+                local displayProgressInfo = function (statPanel)
+                    local lvlMargin = 0;
+                    if (progress.lvl < 10) then lvlMargin = 35; else lvlMargin = 24; end;
 
-                    local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
+                    statPanel.Level = gui.createLine({
+                        parent = statPanel,
+                        content = texts.stats.level..": "..progress.lvl,
+                        coords = { x = lvlMargin, y = - 225 },
+                        direction = { x = "LEFT", y = "TOP" }
+                    });
+                    statPanel.Exp = gui.createLine({
+                        parent = statPanel,
+                        content = texts.stats.expr..": "..progress.expr.."/"..neededExpr,
+                        coords = { x = -90, y = -225 },
+                        direction = { x = "LEFT", y = "TOP" }
+                    });
+                    statPanel.Avl = gui.createLine({
+                        parent = statPanel,
+                        content = texts.stats.avaliable..": "..params.points,
+                        coords = { x = -90, y = -205 },
+                        direction = { x = "LEFT", y = "TOP" }
+                    });
+                end;
 
-                    local penaltyByArmor = {
-                        head = -armorPenalty.head[armor.head][usingStat],
-                        body = -armorPenalty.body[armor.body][usingStat],
-                        legs = -armorPenalty.legs[armor.legs][usingStat],
+                local statPanel = createStatPanel();
+                displayStats(statPanel);
+                displayProgressInfo(statPanel);
+                return statPanel;
+            end,
+            dicePanel = function (mainPanel)
+                local createDicePanel = function ()
+                    local dicePanel = gui.createDefaultFrame({
+                        parent = mainPanel,
+                        title = texts.dices,
+                        size = { width = 80, height = 320 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 70, y = 0 }
+                    });
+                    dicePanel:Hide();
+                    return dicePanel;
+                end;
+
+                local createDiceMenu = function (dicePanel)
+                    dicePanel.Menu = gui.createDefaultFrame({
+                        parent = dicePanel,
+                        size = { width = 236, height = 60 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 0, y = 0 },
+                    });
+
+                    dicePanel.Menu:Hide();
+                end;
+
+                local registerRolls = function (dicePanel)
+                    local dices = {
+                        { info = { size = 6, penalty = 1.2 }, coords = { x = 36, y = 12 } },
+                        { info = { size = 12, penalty = 1.3 }, coords = { x = 90, y = 12 } },
+                        { info = { size = 20, penalty = 1.4 }, coords = { x = 144, y = 12 } },
+                        { info = { size = 100, penalty = 1.4 }, coords = { x = 198, y = 12} },
                     };
 
-                    local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
-                    local penaltyOfArmor = penaltyByArmor.head + penaltyByArmor.body + penaltyByArmor.legs;
+                    for index, dice in pairs(dices) do
+                        helpers.registerRoll({
+                            parent = dicePanel.Menu,
+                            coords = dice.coords,
+                            dice = dice.info,
+                        }, playerContext);
+                    end
+                end;
 
-                    local minRoll = rollWithoutArmor - math.ceil(rollWithoutArmor * penaltyOfArmor);
-                    local maxRoll = diceSize + rollWithoutArmor;
-                    maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
+                local registerDicesTypes = function (dicePanel)
+                    local stats = {
+                        { name = 'str', coords = { x = 0, y = 3 * smallButton.height + 30 }, image = 'sword' },
+                        { name = 'ag', coords = { x = 0, y = 2 * smallButton.height + 20 }, image = 'dagger' },
+                        { name = 'snp', coords = { x = 0, y = smallButton.height + 10 }, image = 'bow' },
+                        { name = 'mg', coords = { x = 0, y = 0 }, image = 'magic' },
+                        { name = 'body', coords = { x = 0, y = -smallButton.height - 10 }, image = 'strong' },
+                        { name = 'moral', coords = { x = 0, y = -2* smallButton.height - 20 }, image = 'fear' },
+                        { name = 'luck', coords = { x = 0, y = -3 * smallButton.height - 30 }, image = 'luck' },
+                    };
 
-                    if (maxRoll == 0) then maxRoll = 1; end;
-                    RandomRoll(minRoll, maxRoll);
-                end
-            );
-        end
+                    for index, stat in pairs(stats) do
+                        gui.registerDice({
+                            views = { parent = dicePanel, main = MainPanelSTIK, menu = dicePanel.Menu },
+                            coords = stat.coords,
+                            image = stat.image,
+                            hint = texts.stats[stat.name],
+                            stat = stat.name,
+                        });
+                    end
+                end;
 
-        local button = CreateFrame("Button", "rollButton", Dice_MENU, "UIPanelButtonTemplate");
-        setRollView(button);
-        setRollScript(button);
-    end
+                local dicePanel = createDicePanel();
+                createDiceMenu(dicePanel);
+                registerRolls(dicePanel);
+                registerDicesTypes(dicePanel);
+                return dicePanel;
+            end,
+            armorPanel = function(mainPanel)
+                local createArmorPanel = function ()
+                    local armorPanel = gui.createDefaultFrame({
+                        parent = mainPanel,
+                        title = texts.stats.armor,
+                        size = { width = 180, height = 235 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 70, y = 0 }
+                    });
 
-    local function registerArmor(settings)
-        local armorLine = createLine({
-            parent = settings.views.parent,
-            content = texts.armor[settings.slot]..": "..texts.armorTypes[armor[settings.slot]],
-            coords = settings.line.coords,
-            direction = settings.line.direction,
-        });
+                    armorPanel:Hide();
+                    return armorPanel;
+                end;
 
-        local armorButton = createDefaultButton({
-            parent = settings.views.parent,
-            content = ">",
-            coords = settings.button.coords,
-            direction = settings.button.direction,
-        });
-        armorButton:SetScript("OnClick",
-            function()
-                local prevSlot = settings.views.armorMenu.slot;
-                settings.views.armorMenu.slot = settings.slot;
-                settings.views.armorMenu.connectedWith = armorLine;
+                local createArmorMenu = function (armorPanel)
+                    armorPanel.Menu = gui.createDefaultFrame({
+                        parent = armorPanel,
+                        size = { width = 430, height = 60 },
+                        aligment = { x = "LEFT", y = "TOP" },
+                        point = { x = 70, y = -60 },
+                    });
 
-                if ((prevSlot == settings.views.armorMenu.slot) and (settings.views.armorMenu:IsVisible())) then 
-                    settings.views.armorMenu:Hide();
-                else
-                    settings.views.armorMenu:SetPoint("LEFT", settings.views.parent, "TOP", 70, settings.line.coords.y);
-                    settings.views.armorMenu:Show();
-                end
-            end
-        );
+                    armorPanel.Menu:Hide();
+                    armorPanel.Menu.slot = nil;
+                end;
 
-        armorLine.button = armorButton;
-        return armorLine;
-    end
+                local registerArmorTypes = function (armorPanel)
+                    local armors = {
+                        { class = 'cloth', coords = { x = 50, y = 12 } },
+                        { class = 'leather', coords = { x = 130, y = 12 } },
+                        { class = 'mail', coords = { x = 210, y = 12 } },
+                        { class = 'plate', coords = { x = 290, y = 12 } },
+                        { class = 'nothing', coords = { x = 370, y = 12 } },
+                    };
 
-    local function registerArmorType(settings)
-        local function setArmorTypeView(view)
-            view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
-            view:SetHeight(23);
-            view:SetWidth(70);
-            view:SetText(texts.armorTypes[settings.armorType]);
-            view:RegisterForClicks("AnyUp");
-        end
+                    for index, armor in pairs(armors) do
+                        helpers.registerArmorType({
+                            parent = armorPanel.Menu,
+                            armorType = armor.class,
+                            coords = armor.coords,
+                        }, playerContext);
+                    end
+                end;
 
-        local function setArmorTypeScript(view)
-            view:SetScript("OnClick",
-                function()
-                    local slot = settings.parent.slot;
-                    armor[slot] = settings.armorType;
-                    settings.parent.connectedWith:SetText(texts.armor[slot]..": "..texts.armorTypes[armor[slot]]);
-                end
-            )
-        end
+                local registerArmorSlots = function (armorPanel)
+                    local slots = {
+                        {
+                            name = 'head',
+                            line = { coords = { x = -70, y = -60 }, direction = { x = "LEFT", y = "TOP" } },
+                            button = { coords = { x = 70, y = -60 }, direction = { x = "RIGHT", y = "TOP" } }
+                        },
+                        {
+                            name = 'body',
+                            line = { coords = { x = -70, y = -90 }, direction = { x = "LEFT", y = "TOP" } },
+                            button = { coords = { x = 70, y = -90 }, direction = { x = "RIGHT", y = "TOP" } }
+                        },
+                        {
+                            name = 'legs',
+                            line = { coords = { x = -70, y = -120 }, direction = { x = "LEFT", y = "TOP" } },
+                            button = { coords = { x = 70, y = -120 }, direction = { x = "RIGHT", y = "TOP" } }
+                        }
+                    }
 
-        local button = CreateFrame("Button", "rollButton", settings.parent, "UIPanelButtonTemplate");
-        setArmorTypeView(button);
-        setArmorTypeScript(button);
+                    for index, _slot in pairs(slots) do
+                        helpers.registerArmor({
+                            views = { parent = armorPanel, armorMenu = armorPanel.Menu },
+                            slot = _slot.name,
+                            line = _slot.line,
+                            button = _slot.button,
+                        }, playerContext);
+                    end
+                    
+                end;
 
-        return button;
-    end
+                local armorPanel = createArmorPanel();
+                createArmorMenu(armorPanel);
+                registerArmorTypes(armorPanel);
+                registerArmorSlots(armorPanel);
+                return armorPanel;
+            end,
+        };
+    end;
 
-    --- Панель цели ---
-    targetInfoFrame = CreateFrame("Frame", "targetInfo", TargetFrame);
-        targetInfoFrame:EnableMouse();
-        targetInfoFrame:SetWidth(TargetFrameHealthBar:GetWidth() + 20);
-        targetInfoFrame:SetHeight(50);
-        targetInfoFrame:SetBackdropColor(0, 0, 0, 1);
-        targetInfoFrame:SetFrameStrata("FULLSCREEN_DIALOG");
-        targetInfoFrame:SetPoint("BOTTOMLEFT", TargetFrame, "BOTTOMLEFT", -5, -5);
-        targetInfoFrame:SetBackdrop({
-	        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-	        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-	        tile = true, tileSize = 32, edgeSize = 32,
-	        insets = { left = 12, right = 12, top = 12, bottom = 12 },
-        });
+    playerInfo = playerInfo or {
+        currentPlot = nil,
+        savedPlots = { },
+        settings = {
+            getInvites = true,
+        }
+    };
 
-        targetInfoAttackable = CreateFrame("Button", "targetInfoAttackable", targetInfoFrame);
-            targetInfoAttackable:EnableMouse(); 
-            targetInfoAttackable:SetWidth(smallestButton.width);
-            targetInfoAttackable:SetHeight(smallestButton.height);
-            targetInfoAttackable:SetPoint("CENTER", targetInfoFrame, "CENTER", 0, 0);
-            targetInfoAttackable:SetScript("OnEnter", showPanelHint);
-            targetInfoAttackable:SetScript("OnLeave", hidePanelHint);
+    currentContext = getPlayerContext(playerInfo);
+
+    if (currentContext == nil) then return end;
+
+    local generator = viewGenerator(currentContext);
 
     --- Основная панель ---
-    local MainPanelSTIK = CreateFrame("Frame", "MainPanelSTIK", UIParent);
-        MainPanelSTIK:EnableMouse();
-        MainPanelSTIK:SetWidth(80);
-        MainPanelSTIK:SetHeight(240);
-        MainPanelSTIK:SetToplevel(true);
-        MainPanelSTIK:SetBackdropColor(0, 0, 0, 1);
-        MainPanelSTIK:SetFrameStrata("FULLSCREEN_DIALOG");
-        MainPanelSTIK:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
-        MainPanelSTIK:SetBackdrop({
-	        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-	        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-	        tile = true, tileSize = 32, edgeSize = 32,
-	        insets = { left = 12, right = 12, top = 12, bottom = 12 },
-        });
-        MainPanelSTIK:SetScript("OnEnter",
-            function()
-                MainPanelSTIK:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
-            end
-        );
-        MainPanelSTIK:SetScript("OnLeave",
-            function()
-                if (not MouseIsOver(MainPanelSTIK) and not StatPanel:IsVisible() and not DicesPanel:IsVisible() and not ArmorPanel:IsVisible()) then
-                    MainPanelSTIK:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
-                end; 
-            end
-        );
-
-
-    --- Кнопки на основной панели ---
-    local MainPanel_Rolls = registerMainButton({
-        parent = MainPanelSTIK,
-        coords = { x = 0, y = 2 * button.height + 20 },
-        image = "dice_pve",
-        highlight = true,
-        hint = texts.dices,
-        functions = {
-            showHint = showPanelHint,
-            hideHint = hidePanelHint,
-            swapPanel = function()
-                swapPanel(DicesPanel)
-                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
-                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
-            end
-        },
-    });
-
-    local MainPanel_Stats = registerMainButton({
-        parent = MainPanelSTIK,
-        coords = { x = 0, y = button.height + 10 },
-        image = "stat",
-        highlight = true,
-        hint = texts.stats.stat,
-        functions = {
-            showHint = showPanelHint,
-            hideHint = hidePanelHint,
-            swapPanel = function()
-                swapPanel(StatPanel)
-                if (DicesPanel:IsVisible()) then swapPanel(DicesPanel); end;
-                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
-            end
-        },
-    });
-
-    local MainPanel_Armor = registerMainButton({
-        parent = MainPanelSTIK,
-        coords = { x = 0, y = 0 },
-        image = "armor",
-        highlight = true,
-        hint = texts.stats.armor,
-        functions = {
-            showHint = showPanelHint,
-            hideHint = hidePanelHint,
-            swapPanel = function()
-                swapPanel(ArmorPanel)
-                if (DicesPanel:IsVisible()) then swapPanel(DicesPanel); end;
-                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
-            end
-        },
-    });
-
-    local MainPanel_HP = registerMainButton({
-        parent = MainPanelSTIK,
-        coords = { x = 0, y = -button.height - 10 },
-        image = "hp",
-        highlight = false,
-        hint = texts.stats.hp,
-        functions = {
-            showHint = showPanelHint,
-            hideHint = hidePanelHint,
-        },
-    });
-    local MainPanel_Shield = registerMainButton({
-        parent = MainPanelSTIK,
-        coords = { x = 0, y = -2 * button.height - 20 },
-        image = "shield",
-        highlight = false,
-        hint = texts.stats.shield,
-        functions = {
-            showHint = showPanelHint,
-            hideHint = hidePanelHint,
-        },
-    });
-
-    HP_TEXT = createLine({
-        parent = MainPanel_HP,
-        content = params.health,
-        coords = { x = 0, y = 0 },
-        direction = { x = "CENTER", y = "CENTER" }
-    });
-
-    SHIELD_TEXT = createLine({
-        parent = MainPanel_Shield,
-        content = params.shield,
-        coords = { x = 0, y = 0 },
-        direction = { x = "CENTER", y = "CENTER" }
-    });
-
+    MainPanelSTIK = generator.mainPanel();
+    --- Панель цели ---
+    targetInfoFrame = generator.targetInfo();
     --- Статы ---
-
-    StatPanel = CreateFrame("Frame", "StatPanel", MainPanelSTIK);
-        StatPanel:Hide();
-        StatPanel:SetWidth(240);
-        StatPanel:SetHeight(260);
-        StatPanel:SetBackdropColor(40, 40, 40, 1);
-        StatPanel:SetFrameStrata("FULLSCREEN_DIALOG");
-        StatPanel:SetPoint("LEFT", MainPanelSTIK, "LEFT", 70, 0);
-        StatPanel:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true, tileSize = 32, edgeSize = 32,
-            insets = { left = 8, right = 8, top = 8, bottom = 8 },
-        });
-
-        local StatTitle = StatPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
-            StatTitle:SetPoint("CENTER", StatPanel, "TOP", 0, -25);
-            StatTitle:SetText(texts.stats.stat);
-            StatTitle:SetAlpha(0.85);
-            StatTitle:Show();
-
-        StatText_STR = registerStat({
-            parent = StatPanel, stat = "str",
-            coords = { x = -90, y = -50 },
-        });
-
-        StatText_AG = registerStat({
-            parent = StatPanel, stat = "ag",
-            coords = { x = -90, y = -75 },
-        });
-
-        StatText_SNP = registerStat({
-            parent = StatPanel, stat = "snp",
-            coords = { x = -90, y = -100 },
-        });
-
-        StatText_MG = registerStat({
-            parent = StatPanel, stat = "mg",
-            coords = { x = -90, y = -125 },
-        });
-
-        StatText_BODY = registerStat({
-            parent = StatPanel, stat = "body",
-            coords = { x = -90, y = -150 },
-        });
-
-        StatText_MORAL = registerStat({
-            parent = StatPanel, stat = "moral",
-            coords = { x = -90, y = -175 },
-        });
-        
-        local lvlMargin = 0;
-
-        if (progress.lvl < 10) then lvlMargin = 35;
-        else lvlMargin = 24;
-        end;
-
-        StatText_Level = createLine({
-            parent = StatPanel,
-            content = texts.stats.level..": "..progress.lvl,
-            coords = { x = lvlMargin, y = - 225 },
-            direction = { x = "LEFT", y = "TOP" }
-        });
-        StatText_Exp = createLine({
-            parent = StatPanel,
-            content = texts.stats.expr..": "..progress.expr.."/"..neededExpr,
-            coords = { x = -90, y = -225 },
-            direction = { x = "LEFT", y = "TOP" }
-        });
-        StatText_Avl = createLine({
-            parent = StatPanel,
-            content = texts.stats.avaliable..": "..params.points,
-            coords = { x = -90, y = -205 },
-            direction = { x = "LEFT", y = "TOP" }
-        });
-    
+    StatPanel = generator.statPanel(MainPanelSTIK);
     --- Панель кубов ---
-
-    DicesPanel = CreateFrame("Frame", "DicesPanel", MainPanelSTIK);
-        DicesPanel:Hide();
-        DicesPanel:SetWidth(80);
-        DicesPanel:SetHeight(320);
-        DicesPanel:SetBackdropColor(40, 40, 40, 1);
-        DicesPanel:SetFrameStrata("FULLSCREEN_DIALOG");
-        DicesPanel:SetPoint("LEFT", MainPanelSTIK, "LEFT", 70, 0);
-        DicesPanel:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true, tileSize = 32, edgeSize = 32,
-            insets = { left = 12, right = 12, top = 12, bottom = 12 },
-        });
-
-    local DicesTitle = createLine({
-        parent = DicesPanel,
-        content = texts.dices,
-        coords = { x = 0, y = - 25 },
-        direction = { x = "CENTER", y = "TOP" }
-    });
-
-    Dice_MENU = CreateFrame("Frame", "PvEDiceSTRMenu", DicesPanel);
-        Dice_MENU:Hide();
-        Dice_MENU:SetWidth(236);
-        Dice_MENU:SetHeight(60);
-        Dice_MENU:SetBackdropColor(40, 40, 40, 1);
-        Dice_MENU:SetFrameStrata("FULLSCREEN_DIALOG");
-        Dice_MENU:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-            tile = true, tileSize = 32, edgeSize = 32,
-            insets = { left = 8, right = 8, top = 8, bottom = 8 },
-        });
-
-        local Dice_d6 = registerRoll({
-            parent = Dice_MENU,
-            coords = { x = 36, y = 12 },
-            dice = { size = 6, penalty = 1.2 },
-        });
-
-        local Dice_d12 = registerRoll({
-            parent = Dice_MENU,
-            coords = { x = 90, y = 12 },
-            dice = { size = 12, penalty = 1.3 },
-        });
-
-        local Dice_d20 = registerRoll({
-            parent = Dice_MENU,
-            coords = { x = 144, y = 12 },
-            dice = { size = 20, penalty = 1.4 },
-        });
-
-        local Dice_d100 = registerRoll({
-            parent = Dice_MENU,
-            coords = { x = 198, y = 12 },
-            dice = { size = 100, penalty = 1.4 },
-        });
-
-    local Dice_STR = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = { x = 0, y = 3 * smallButton.height + 30 },
-        image = "sword",
-        hint = texts.stats.str,
-        stat = 'str',
-    });
-
-    local Dice_AGL = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = { x = 0, y = 2 * smallButton.height + 20 },
-        image = "dagger",
-        hint = texts.stats.ag,
-        stat = 'ag',
-    });
-
-    local Dice_SNP = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = {x = 0, y = smallButton.height + 10 },
-        image = "bow",
-        hint = texts.stats.snp,
-        stat = 'snp',
-    });
-
-    local Dice_MGK = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = { x = 0, y = 0 },
-        image = "magic",
-        hint = texts.stats.mg,
-        stat = 'mg',
-    });
-
-    local Dice_Body = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = { x = 0, y = -smallButton.height - 10 },
-        image = "strong",
-        hint = texts.stats.body,
-        stat = 'body',
-    });
-
-    local Dice_Moral = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = { x = 0, y = -2* smallButton.height - 20 },
-        image = "fear",
-        hint = texts.stats.moral,
-        stat = 'moral',
-    });
-
-    local Dice_Luck = registerDice({
-        views = { parent = DicesPanel, main = MainPanelSTIK, menu = Dice_MENU },
-        coords = { x = 0, y = -3 * smallButton.height - 30 },
-        image = "luck",
-        hint = texts.stats.luck,
-        stat = 'luck',
-    });
-    
+    DicePanel = generator.dicePanel(MainPanelSTIK);
     --- Панель брони ---
-
-    local function defaultArmorSettings(frame, hint, x, y, icon)
-        frame:SetSize(button.width, button.height);
-        frame:SetPoint("CENTER", ArmorPanel, "CENTER", x, y);
-        frame:RegisterForClicks("AnyUp");
-        frame:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..icon..".blp");
-        frame:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..icon..".blp");
-        frame:Show()
-        frame.hint = hint;
-        frame:SetScript("OnEnter", showPanelHint);
-        frame:SetScript("OnLeave", hidePanelHint);
-    end
-
-    ArmorPanel = CreateFrame("Frame", "ArmorPanel", MainPanelSTIK);
-        ArmorPanel:Hide();
-        ArmorPanel:SetWidth(180);
-        ArmorPanel:SetHeight(235);
-        ArmorPanel:SetBackdropColor(40, 40, 40, 1);
-        ArmorPanel:SetFrameStrata("FULLSCREEN_DIALOG");
-        ArmorPanel:SetPoint("LEFT", MainPanelSTIK, "LEFT", 70, 0);
-        ArmorPanel:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true, tileSize = 32, edgeSize = 32,
-            insets = { left = 8, right = 8, top = 8, bottom = 8 },
-        });
-
-        local Armor_Title = createLine({
-            parent = ArmorPanel,
-            content = texts.stats.armor,
-            coords = { x = 0, y = -25 },
-            direction = { x = "CENTER", y = "TOP" }
-        });
-
-        Armor_MENU = CreateFrame("Frame", "ArmorMenu", ArmorPanel);
-            Armor_MENU:SetPoint("LEFT", ArmorPanel, "TOP", 70, -60);
-            Armor_MENU:SetWidth(430);
-            Armor_MENU:SetHeight(60);
-            Armor_MENU:SetBackdropColor(40, 40, 40, 1);
-            Armor_MENU:SetFrameStrata("FULLSCREEN_DIALOG");
-            Armor_MENU:Hide();
-            Armor_MENU:SetBackdrop({
-                bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-                tile = true, tileSize = 32, edgeSize = 32,
-                insets = { left = 8, right = 8, top = 8, bottom = 8 },
-            });
-
-            Armor_MENU.slot = nil;
-
-            local Armor_Cloth = registerArmorType({
-                parent = Armor_MENU,
-                coords = { x = 50, y = 12 },
-                armorType = 'cloth',
-            });
-
-            local Armor_Leather = registerArmorType({
-                parent = Armor_MENU,
-                coords = { x = 130, y = 12 },
-                armorType = 'leather',
-            });
-
-            local Armor_Mail = registerArmorType({
-                parent = Armor_MENU,
-                coords = { x = 210, y = 12 },
-                armorType = 'mail',
-            });
-
-            local Armor_Plate = registerArmorType({
-                parent = Armor_MENU,
-                coords = { x = 290, y = 12 },
-                armorType = 'plate',
-            });
-
-            local Armor_Nothing = registerArmorType({
-                parent = Armor_MENU,
-                coords = { x = 370, y = 12 },
-                armorType = 'nothing',
-            });
-
-        local Armor_HELM = registerArmor({
-            views = { parent = ArmorPanel, armorMenu = Armor_MENU },
-            slot = 'head',
-            line = {
-                coords = { x = -70, y = -60 },
-                direction = { x = "LEFT", y = "TOP" },
-            },
-            button = {
-                coords = { x = 70, y = -60 },
-                direction = { x = "RIGHT", y = "TOP" }
-            },
-        });
-
-        local Armor_BODY = registerArmor({
-            views = { parent = ArmorPanel, armorMenu = Armor_MENU },
-            slot = 'body',
-            line = {
-                content = texts.armor.body..": "..armor.body,
-                coords = { x = -70, y = -90 },
-                direction = { x = "LEFT", y = "TOP" },
-            },
-            button = {
-                coords = { x = 70, y = -90 },
-                direction = { x = "RIGHT", y = "TOP" }
-            }
-        });
-
-        local Armor_LEGS = registerArmor({
-            views = { parent = ArmorPanel, armorMenu = Armor_MENU },
-            slot = 'legs',
-            line = {
-                content = texts.armor.legs..": "..armor.legs,
-                coords = { x = -70, y = -120 },
-                direction = { x = "LEFT", y = "TOP" },
-            },
-            button = {
-                coords = { x = 70, y = -120 },
-                direction = { x = "RIGHT", y = "TOP" }
-            }
-        });
+    ArmorPanel = generator.armorPanel(MainPanelSTIK);
 end;
 
 function onDMSaySomething(prefix, msg, tp, sender)
@@ -936,7 +889,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             if (params.health + health <= 3 + math.floor(stats.body / 20)) then
                 params.health = params.health + health;
                 if (params.health < 0) then params.health = 0; end;
-                HP_TEXT:SetText(params.health);
+                MainPanelSTIK.HP.Text:SetText(params.health);
                 if (health < 0) then 
                     print('Вы потеряли '..math.abs(health)..' ХП')
                 else
@@ -950,7 +903,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 print ('Вам пытались выдать ' ..math.abs(health).. ' ХП, но ваше максимальное значение - ' ..3 + math.floor(stats.body / 20));
                 print ('Значение здоровья было установлено в макс., лишние ХП - уничтожены');
                 params.health = calculateHealth(stats);
-                HP_TEXT:SetText(params.health);
+                MainPanelSTIK.HP.Text:SetText(params.health);
             end;
         end,
         change_battle_state = function(battleState)
@@ -966,7 +919,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
         restore_hp = function()
             params.health = calculateHealth(stats);
             print('Ваши ХП были восстановлены');
-            HP_TEXT:SetText(params.health);
+            MainPanelSTIK.HP.Text:SetText(params.health);
         end,
         play_music = function(musicName)
             local _type, number = strsplit("_", musicName);
@@ -979,7 +932,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             local score = tonumber(barrierScore, 10);
             params.shield = params.shield + score;
             if (params.shield < 0) then params.shield = 0; end;
-            SHIELD_TEXT:SetText(params.shield);
+            MainPanelSTIK.Shield.Text:SetText(params.shield);
             if (score < 0) then 
                 print('Вы потеряли '..math.abs(score)..' пункт(-ов) барьера')
             else
@@ -992,7 +945,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             if (params.shield >= dmg) then
                 params.shield = params.shield - dmg;
                 print('Вы получили '..dmg.. ' урона. Он был поглощён щитом');
-                SHIELD_TEXT:SetText(params.shield);
+                MainPanelSTIK.Shield.Text:SetText(params.shield);
                 if (params.shield == 0) then print('Вы потеряли наложенный на вас щит!'); end;
             elseif (params.shield > 0 and params.shield - dmg < 0) then
                 local afterShieldDamage = math.abs(params.shield - dmg);
@@ -1005,8 +958,8 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     print('Вы не можете продолжать бой');
                     SendChatMessage('(( Выведен из боя ))');
                 end;
-                HP_TEXT:SetText(params.health);
-                SHIELD_TEXT:SetText(params.shield);
+                MainPanelSTIK.HP.Text:SetText(params.health);
+                MainPanelSTIK.Shield.Text:SetText(params.shield);
             elseif (params.shield == 0 and params.health >= 0) then
                 params.health = params.health - math.abs(dmg);
                 print('Вы получили '..dmg..' урона.');
@@ -1015,7 +968,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     print('Вы не можете продолжать бой');
                     SendChatMessage('(( Выведен из боя ))');
                 end;
-                HP_TEXT:SetText(params.health);
+                MainPanelSTIK.HP.Text:SetText(params.health);
             end;
         end,
         kick = function()
@@ -1088,6 +1041,20 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 PopUpSubmit:SetScript('OnClick', function()
                     SendAddonMessage('STIK_PLAYER_ANSWER', 'invite_accept&'..UnitName('player')..' '..meta, "WHISPER", master);
                     print('Вы присоединились к сюжету "'..title..'"');
+                    playerInfo[meta] = { };
+                    playerInfo[meta].stats = { str = 0, moral = 0, mg = 0, body = 0, snp = 0, ag = 0 };
+                    playerInfo[meta].progress = { expr = 0, lvl = 1 };
+                    playerInfo[meta].params = {
+                        shield = 0,
+                        points = calculatePoints(playerInfo[meta].stats, playerInfo[meta].progress),
+                        health = calculateHealth(playerInfo[meta].stats)
+                    };
+                    playerInfo[meta].armor = { legs = "nothing", body = "nothing", head = "nothing" };
+                    playerInfo[meta].flags = { isInBattle = 0 };
+                    playerInfo.savedPlots[meta] = {
+                        name = title,
+                        content = description,
+                    };
                     PopUpFrame:Hide();
                 end)
 
@@ -1120,18 +1087,18 @@ function clearTalantes()
 end;
 
 function updateStats()
-    StatText_STR:SetText(texts.stats.str..": "..stats.str);
-    StatText_AG:SetText(texts.stats.ag..": "..stats.ag);
-    StatText_SNP:SetText(texts.stats.snp..": "..stats.snp);
-    StatText_MG:SetText(texts.stats.mg..": "..stats.mg);
-    StatText_BODY:SetText(texts.stats.body..": "..stats.body);
-    StatText_MORAL:SetText(texts.stats.moral..": "..stats.moral);
-    StatText_Level:SetText(texts.stats.level..": "..progress.lvl);
-    StatText_Exp:SetText(texts.stats.expr..": "..progress.expr.."/"..neededExpr);
-    StatText_Avl:SetText(texts.stats.avaliable..": "..calculatePoints(stats, progress));
+    StatPanel.stat_str:SetText(texts.stats.str..": "..stats.str);
+    StatPanel.stat_ag:SetText(texts.stats.ag..": "..stats.ag);
+    StatPanel.stat_snp:SetText(texts.stats.snp..": "..stats.snp);
+    StatPanel.stat_mg:SetText(texts.stats.mg..": "..stats.mg);
+    StatPanel.stat_body:SetText(texts.stats.body..": "..stats.body);
+    StatPanel.stat_moral:SetText(texts.stats.moral..": "..stats.moral);
+    StatPanel.Level:SetText(texts.stats.level..": "..progress.lvl);
+    StatPanel.Exp:SetText(texts.stats.expr..": "..progress.expr.."/"..neededExpr);
+    StatPanel.Avl:SetText(texts.stats.avaliable..": "..calculatePoints(stats, progress));
 
     params.health = calculateHealth(stats);
-    HP_TEXT:SetText(params.health);
+    MainPanelSTIK.HP.Text:SetText(params.health);
 end
 
 function showTargetInfo(selectionType)
@@ -1142,13 +1109,13 @@ function showTargetInfo(selectionType)
     if (isTargetExists and not isTargetPlayer) then
         local canBeAttackedMelee = CheckInteractDistance("target", 3);
         if (canBeAttackedMelee) then
-            targetInfoAttackable:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_ok.blp");
-            targetInfoAttackable:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_ok.blp");
-            targetInfoAttackable.hint = texts.canBeAttacked.ok;
+            targetInfoFrame.AttackablePanel:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_ok.blp");
+            targetInfoFrame.AttackablePanel:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_ok.blp");
+            targetInfoFrame.AttackablePanel.hint = texts.canBeAttacked.ok;
         else
-            targetInfoAttackable:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_not.blp");
-            targetInfoAttackable:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_not.blp");
-            targetInfoAttackable.hint = texts.canBeAttacked.notOK;
+            targetInfoFrame.AttackablePanel:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_not.blp");
+            targetInfoFrame.AttackablePanel:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_not.blp");
+            targetInfoFrame.AttackablePanel.hint = texts.canBeAttacked.notOK;
         end
     
         if (flags.isInBattle == 1) then targetInfoFrame:Show();

@@ -2,6 +2,6 @@
 ## Title: Ролевая система от FriendSnowy
 ## Version: 1.0
 ## DefaultState: Enabled
-## SavedVariablesPerCharacter: stats, params, progress, armor, flags
+## SavedVariablesPerCharacter: playerInfo
 SS.xml
 SSMiniMapButton.xml
