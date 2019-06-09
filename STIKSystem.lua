@@ -50,6 +50,8 @@ local texts = {
         removePlot = "Удалить",
         selectPlot = "Активировать",
         unselectPlot = "Деактивировать",
+        activeEventTitle = "Активный сюжет",
+        unactivateButton = "Покинуть текущее событие"
     },
     err = {
         battle = "Нельзя изменить значение характеристики в процессе боя",
@@ -1073,37 +1075,56 @@ function onAddonReady()
                     if (not(settingsPanel.Title)) then
                         settingsPanel.Title = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
                         settingsPanel.Title:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 290, -56);
-                        settingsPanel.Title:SetText(texts.settings.parts);
+                        if (playerInfo.settings.isEventStarted) then
+                            settingsPanel.Title:SetText(texts.settings.activeEventTitle);
+                        else
+                            settingsPanel.Title:SetText(texts.settings.parts);
+                        end;
                     end;
 
                     settingsPanel.Plots = settingsPanel.Plots or { };
                     settingsPanel.plotForScreen = 5;
                     settingsPanel.plotsOffset = settingsPanel.plotsOffset or 0;
-
-                    if (#settingsPanel.Plots > 0) then
-                        for index, plotView in pairs(settingsPanel.Plots) do
-                            plotView:Hide();
-                            settingsPanel.Plots[index] = nil;
+                    if (playerInfo.settings.isEventStarted) then
+                        local plotID = playerInfo.settings.currentPlot;
+                        local plot = playerInfo.savedPlots[plotID];
+                        local plotView = gui.createPlotView({
+                            id = plotID,
+                            parent = settingsPanel,
+                            size = { width = 240, height = 24 },
+                            point = { x = 290, y = 80 },
+                            text = plot.name;
+                            clickHandler = function()
+                                settingsPanel.createSinglePlot(plotID);
+                            end,
+                        });
+                        plotView.Text:SetTextColor(0.901, 0.494, 0.133, 1);
+                    else
+                        if (#settingsPanel.Plots > 0) then
+                            for index, plotView in pairs(settingsPanel.Plots) do
+                                plotView:Hide();
+                                settingsPanel.Plots[index] = nil;
+                            end;
                         end;
-                    end;
 
-                    local plotIndex = 0;
-                    for plotID, plot in pairs(playerInfo.savedPlots) do
-                        if (not(plotIndex < settingsPanel.plotsOffset)) then
-                            local plotView = gui.createPlotView({
-                                id = plotID,
-                                parent = settingsPanel,
-                                size = { width = 240, height = 24 },
-                                point = { x = 290, y = 80 + 32 * (plotIndex - settingsPanel.plotsOffset) },
-                                text = plot.name;
-                                clickHandler = function()
-                                    settingsPanel.createSinglePlot(plotID);
-                                end,
-                            });
-                            table.insert(settingsPanel.Plots, plotView);
+                        local plotIndex = 0;
+                        for plotID, plot in pairs(playerInfo.savedPlots) do
+                            if (not(plotIndex < settingsPanel.plotsOffset)) then
+                                local plotView = gui.createPlotView({
+                                    id = plotID,
+                                    parent = settingsPanel,
+                                    size = { width = 240, height = 24 },
+                                    point = { x = 290, y = 80 + 32 * (plotIndex - settingsPanel.plotsOffset) },
+                                    text = plot.name;
+                                    clickHandler = function()
+                                        settingsPanel.createSinglePlot(plotID);
+                                    end,
+                                });
+                                table.insert(settingsPanel.Plots, plotView);
+                            end;
+                            plotIndex = plotIndex + 1;
+                            if (plotIndex == settingsPanel.plotForScreen + settingsPanel.plotsOffset) then break end;
                         end;
-                        plotIndex = plotIndex + 1;
-                        if (plotIndex == settingsPanel.plotForScreen + settingsPanel.plotsOffset) then break end;
                     end;
                 end;
 
@@ -1169,49 +1190,72 @@ function onAddonReady()
                         settingsPanel.SinglePlot = nil;
                     end);
 
-                    settingsPanel.SinglePlot.DeleteButton = gui.createDefaultButton({
-                        parent = settingsPanel.SinglePlot,
-                        direction = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
-                        coords = { x = 24, y = 24 },
-                        size = { width = 96, height = 32 },
-                        content = texts.settings.removePlot,
-                    });
+                    if (playerInfo.settings.isEventStarted) then
+                        settingsPanel.SinglePlot.UnactivateButton = gui.createDefaultButton({
+                            parent = settingsPanel.SinglePlot,
+                            direction = { x = "BOTTOMRIGHT", y = "BOTTOMRIGHT" },
+                            coords = { x = -24, y = 24 },
+                            size = { width = 204, height = 32 },
+                            content = texts.settings.unactivateButton,
+                        });
 
-                    settingsPanel.SinglePlot.DeleteButton:SetScript("OnClick", function()
-                        playerInfo.savedPlots[plotID] = nil;
-                        playerInfo[plotID] = nil;
-                        settingsPanel.SinglePlot:Hide();
-                        settingsPanel.SinglePlot = nil;
-                        settingsPanel.RefreshPlotList();
-                    end);
-
-                    local selectBtnContent = nil;
-                    if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = texts.settings.unselectPlot;
-                    else selectBtnContent = texts.settings.selectPlot;
-                    end;
-
-                    settingsPanel.SinglePlot.SelectButton = gui.createDefaultButton({
-                        parent = settingsPanel.SinglePlot,
-                        direction = { x = "BOTTOMRIGHT", y = "BOTTOMRIGHT" },
-                        coords = { x = -24, y = 24 },
-                        size = { width = 124, height = 32 },
-                        content = selectBtnContent,
-                    });
-
-                    settingsPanel.SinglePlot.SelectButton:SetScript("OnClick", function()
-                        if (plotID == playerInfo.settings.currentPlot) then
+                        settingsPanel.SinglePlot.UnactivateButton:SetScript("OnClick", function()
+                            SendAddonMessage("STIK_PLAYER_ANSWER", "leave_event&"..UnitName("player"), "WHISPER", playerInfo.settings.currentMaster);
                             playerInfo.settings.currentPlot = nil;
-                        else
-                            playerInfo.settings.currentPlot = plotID;
+                            playerInfo.settings.currentMaster = nil;
+                            playerInfo.settings.isEventStarted = false;
+                            if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
+                            if (targetInfoFrame) then targetInfoFrame:Hide(); end;
+                            if (StatPanel) then StatPanel:Hide(); end;
+                            if (DicePanel) then DicePanel:Hide(); end;
+                            if (ArmorPanel) then ArmorPanel:Hide(); end;
+                            onAddonReady();
+                        end);
+                    else
+                        settingsPanel.SinglePlot.DeleteButton = gui.createDefaultButton({
+                            parent = settingsPanel.SinglePlot,
+                            direction = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
+                            coords = { x = 24, y = 24 },
+                            size = { width = 96, height = 32 },
+                            content = texts.settings.removePlot,
+                        });
+    
+                        settingsPanel.SinglePlot.DeleteButton:SetScript("OnClick", function()
+                            playerInfo.savedPlots[plotID] = nil;
+                            playerInfo[plotID] = nil;
+                            settingsPanel.SinglePlot:Hide();
+                            settingsPanel.SinglePlot = nil;
+                            settingsPanel.RefreshPlotList();
+                        end);
+    
+                        local selectBtnContent = nil;
+                        if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = texts.settings.unselectPlot;
+                        else selectBtnContent = texts.settings.selectPlot;
                         end;
-                        settingsPanel.RefreshPlotList();
-                        if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
-                        if (targetInfoFrame) then targetInfoFrame:Hide(); end;
-                        if (StatPanel) then StatPanel:Hide(); end;
-                        if (DicePanel) then DicePanel:Hide(); end;
-                        if (ArmorPanel) then ArmorPanel:Hide(); end;
-                        onAddonReady();
-                    end);
+    
+                        settingsPanel.SinglePlot.SelectButton = gui.createDefaultButton({
+                            parent = settingsPanel.SinglePlot,
+                            direction = { x = "BOTTOMRIGHT", y = "BOTTOMRIGHT" },
+                            coords = { x = -24, y = 24 },
+                            size = { width = 124, height = 32 },
+                            content = selectBtnContent,
+                        });
+    
+                        settingsPanel.SinglePlot.SelectButton:SetScript("OnClick", function()
+                            if (plotID == playerInfo.settings.currentPlot) then
+                                playerInfo.settings.currentPlot = nil;
+                            else
+                                playerInfo.settings.currentPlot = plotID;
+                            end;
+                            settingsPanel.RefreshPlotList();
+                            if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
+                            if (targetInfoFrame) then targetInfoFrame:Hide(); end;
+                            if (StatPanel) then StatPanel:Hide(); end;
+                            if (DicePanel) then DicePanel:Hide(); end;
+                            if (ArmorPanel) then ArmorPanel:Hide(); end;
+                            onAddonReady();
+                        end);
+                    end;                    
                 end;
 
                 settingsPanel.RefreshPlotList = function()
@@ -1461,7 +1505,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             end;
             PlaySound("LEVELUPSOUND", "SFX");
 
-            PopUpFrame = CreateFrame("Frame", "PopUpFrame", UIParent);
+            local PopUpFrame = CreateFrame("Frame", "PopUpFrame", UIParent);
                 PopUpFrame:Show();
                 PopUpFrame:EnableMouse();
                 PopUpFrame:SetWidth(396);
@@ -1556,14 +1600,134 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 SendAddonMessage("STIK_PLAYER_ANSWER", "remove_me&"..index.."~"..UnitName("player"), "WHISPER", master);
                 return;
             end;
-            print(master);
-            print(index);
-            print(shouldResHP);
-            print(shouldNilBarrier);
+
+            if (not(playerInfo.settings.getEventInvites)) then
+                SendAddonMessage("STIK_PLAYER_ANSWER", "event_decline&"..UnitName("player"), "WHISPER", master);
+                if (playerInfo.settings.showDeclineMessages) then
+                    print('Приглашение на участие в событии "'..playerInfo.savedPlots[index].name..'" было автоматически отклонено');
+                end;
+                return;
+            end;
+
+            PlaySound("LEVELUPSOUND", "SFX");
+
+            local PopUpFrame = CreateFrame("Frame", "PopUpFrame", UIParent);
+                PopUpFrame:Show();
+                PopUpFrame:EnableMouse();
+                PopUpFrame:SetWidth(360);
+                PopUpFrame:SetHeight(360);
+                PopUpFrame:SetToplevel(true);
+                PopUpFrame:SetBackdropColor(0, 0, 0, 1);
+                PopUpFrame:SetFrameStrata("FULLSCREEN_DIALOG");
+                PopUpFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0);
+                PopUpFrame:SetBackdrop({
+                    bgFile = "Interface\\AddOns\\STIKSystem\\IMG\\event-popup-background.blp",
+                    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+                    tile = false, tileSize = 32, edgeSize = 32,
+                    insets = { left = 12, right = 12, top = 12, bottom = 12 },
+                });
+
+            local PopUpTitle = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpTitle:SetPoint("CENTER", PopUpFrame, "TOP", 0, -35);
+                PopUpTitle:SetText('Приглашение');
+                PopUpTitle:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE, MONOCHROME");
+                PopUpTitle:Show();
+                
+            local PopUpInfo = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpInfo:SetWidth(348);
+                PopUpInfo:SetPoint("TOP", PopUpFrame, "TOP", 0, -100);
+                PopUpInfo:SetText('Ведущий '..master..' начинает событие в сюжете');
+                PopUpInfo:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME");
+                PopUpInfo:Show();
+
+            local PopUpPlot = PopUpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+                PopUpPlot:SetWidth(348);
+                PopUpPlot:SetPoint("TOP", PopUpFrame, "TOP", 0, -150);
+                PopUpPlot:SetText('"'..playerInfo.savedPlots[index].name..'"');
+                PopUpPlot:SetTextColor(0.901, 0.494, 0.133, 1);
+                PopUpPlot:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE, MONOCHROME");
+                PopUpPlot:Show();
+
+            local PopUpSubmit = CreateFrame("Button", "PopUpSubmit", PopUpFrame, "UIPanelButtonTemplate");
+                PopUpSubmit:SetPoint("CENTER", PopUpFrame, "CENTER", 0, -72);
+                PopUpSubmit:SetWidth(160);
+                PopUpSubmit:SetHeight(32);
+                PopUpSubmit:SetText('Присоединиться');
+                PopUpSubmit:RegisterForClicks("AnyUp");
+                PopUpSubmit:SetScript("OnClick", function()
+                    playerInfo.settings.currentPlot = index;
+                    playerInfo.settings.currentMaster = master;
+                    SettingsPanel.RefreshPlotList();
+
+                    if (tonumber(shouldResHP) == 1) then
+                        playerInfo[index].params.health = calculateHealth(playerInfo[index].stats);
+                        print('ОЗ были восстановлены по решению ведущего');
+                    end;
+
+                    if (tonumber(shouldNilBarrier) == 1) then
+                        playerInfo[index].params.shield = 0;
+                        print('Барьеры были сброшены по решению ведущего');
+                    end;
+
+                    playerInfo[index].hash = STIKStatHash(playerInfo[index]);
+        
+                    if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
+                    if (targetInfoFrame) then targetInfoFrame:Hide(); end;
+                    if (StatPanel) then StatPanel:Hide(); end;
+                    if (DicePanel) then DicePanel:Hide(); end;
+                    if (ArmorPanel) then ArmorPanel:Hide(); end;
+                    PopUpFrame:Hide();
+                    onAddonReady();
+
+                    playerInfo.settings.isEventStarted = true;
+                    if (master == UnitName("player")) then return nil end;
+                    SHOULD_ACCEPT_NEXT_INVITE = true;
+                    MASTER = master;
+                    SendAddonMessage("STIK_PLAYER_ANSWER", "event_accept&"..UnitName("player"), "WHISPER", master);
+                end);
+
+            local PopUpDecline = CreateFrame("Button", "PopUpSubmit", PopUpFrame, "UIPanelButtonTemplate");
+                PopUpDecline:SetPoint("CENTER", PopUpFrame, "CENTER", 0, -112);
+                PopUpDecline:SetWidth(160);
+                PopUpDecline:SetHeight(32);
+                PopUpDecline:SetText('Отказаться');
+                PopUpDecline:RegisterForClicks("AnyUp");
+                PopUpDecline:SetScript("OnClick", function()
+                    SendAddonMessage("STIK_PLAYER_ANSWER", "event_decline&"..UnitName("player"), "WHISPER", master);
+                    PopUpFrame:Hide();
+                end);
+        end,
+        event_stop = function(plotID)
+            if (not(playerInfo.settings.currentPlot == plotID)) then return nil; end;
+            playerInfo.settings.isEventStarted = false;
+            playerInfo.settings.currentPlot = nil;
+            playerInfo.settings.currentMaster = nil;
+            if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
+            if (targetInfoFrame) then targetInfoFrame:Hide(); end;
+            if (StatPanel) then StatPanel:Hide(); end;
+            if (DicePanel) then DicePanel:Hide(); end;
+            if (ArmorPanel) then ArmorPanel:Hide(); end;
+            onAddonReady();
+            print('Мастер завершил событие сюжета "'..playerInfo.savedPlots[plotID].name..'"');
         end,
     };
 
     commandConnector[COMMAND](VALUE);
+end;
+
+function acceptEventInvite()
+    if (SHOULD_ACCEPT_NEXT_INVITE) then
+        AcceptGroup();
+    end;
+end;
+
+function sendRaidRequest()
+    if (SHOULD_ACCEPT_NEXT_INVITE) then
+        StaticPopup_Hide("PARTY_INVITE");
+        SendAddonMessage("STIK_PLAYER_ANSWER", "maybe_raid", "WHISPER", MASTER);
+        MASTER = nil;
+        SHOULD_ACCEPT_NEXT_INVITE = false;
+    end;
 end;
 
 function clearTalantes()

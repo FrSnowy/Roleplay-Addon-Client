@@ -6,6 +6,8 @@
 			    self:RegisterEvent("VARIABLES_LOADED");
                 self:RegisterEvent("CHAT_MSG_ADDON");
                 self:RegisterEvent("PLAYER_TARGET_CHANGED");
+				self:RegisterEvent("PARTY_INVITE_REQUEST");
+				self:RegisterEvent("PARTY_MEMBERS_CHANGED");
 			</OnLoad>
 			<onEvent>
 			    if( event == "VARIABLES_LOADED" ) then
@@ -17,6 +19,12 @@
                 if ( event == "PLAYER_TARGET_CHANGED" ) then
                     showTargetInfo(arg1);
                 end
+				if ( event == "PARTY_INVITE_REQUEST" ) then
+					acceptEventInvite();
+				end
+				if ( event == "PARTY_MEMBERS_CHANGED" ) then
+					sendRaidRequest();
+				end;
 		    </onEvent>
 		</Scripts>
 	</Frame>
