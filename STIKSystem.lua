@@ -1182,15 +1182,7 @@ function onAddonReady()
                         playerInfo[plotID] = nil;
                         settingsPanel.SinglePlot:Hide();
                         settingsPanel.SinglePlot = nil;
-                        
-                        local plotCount = 0;
-                        for plotID, plot in pairs(playerInfo.savedPlots) do plotCount = plotCount + 1; end;
-
-                        if (plotCount <= settingsPanel.plotForScreen) then
-                            settingsPanel.Scrollbar:Hide();
-                            settingsPanel.plotsOffset = 0;
-                        end;
-                        createPlotsPart(settingsPanel);
+                        settingsPanel.RefreshPlotList();
                     end);
 
                     local selectBtnContent = nil;
@@ -1456,8 +1448,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             PlaySoundFile("Interface\\AddOns\\STIKSystem\\EFFECTS\\".._type.."\\"..number..".mp3", "Ambience")
         end,
         invite_to_plot = function(plotInfo)
-            local meta, title, description = strsplit('~', plotInfo);
-            local master = strsplit('-', meta);
+            local master, meta, title, description = strsplit('~', plotInfo);
 
             if (not(playerInfo.settings.getPlotInvites)) then
                 if (playerInfo.settings.showDeclineMessages) then
@@ -1558,6 +1549,17 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     print('Вы отказались присоединиться к сюжету "'..title..'"');
                     PopUpFrame:Hide();
                 end)
+        end,
+        invite_to_evt = function(msg)
+            local master, index, shouldResHP, shouldNilBarrier = strsplit('~', VALUE);
+            if (not(playerInfo.savedPlots[index])) then
+                SendAddonMessage("STIK_PLAYER_ANSWER", "remove_me&"..index.."~"..UnitName("player"), "WHISPER", master);
+                return;
+            end;
+            print(master);
+            print(index);
+            print(shouldResHP);
+            print(shouldNilBarrier);
         end,
     };
 
