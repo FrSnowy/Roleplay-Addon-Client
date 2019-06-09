@@ -48,6 +48,8 @@ local texts = {
         parts = "Сохраненные сюжеты",
         plot = "Сюжет",
         removePlot = "Удалить",
+        selectPlot = "Активировать",
+        unselectPlot = "Деактивировать",
     },
     err = {
         battle = "Нельзя изменить значение характеристики в процессе боя",
@@ -550,12 +552,22 @@ function onAddonReady()
 
     --- Генератор вьюшек ---
     local viewGenerator = function (playerContext)
-        local progress = playerContext.progress;
-        local armor = playerContext.armor;
-        local stats = playerContext.stats;
-        local flags = playerContext.flags;
-        local params = playerContext.params;
-        local neededExpr = progress.lvl * 1000;
+        local progress = nil;
+        local armor = nil;
+        local stats = nil;
+        local flags = nil;
+        local params = nil;
+        local neededExpr = nil;
+
+        if (playerContext) then
+            progress = playerContext.progress;
+            armor = playerContext.armor;
+            stats = playerContext.stats;
+            flags = playerContext.flags;
+            params = playerContext.params;
+            neededExpr = progress.lvl * 1000;
+        end;
+        
         return {
             mainPanel = function ()
                 local createMainPanel = function()
@@ -571,7 +583,7 @@ function onAddonReady()
                         self:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
                     end);
                     mainPanel:SetScript("OnLeave", function(self)
-                        local isAnyPanelVisible = StatPanel:IsVisible() or DicePanel:IsVisible() or ArmorPanel:IsVisible();
+                        local isAnyPanelVisible = StatPanel:IsVisible() or DicePanel:IsVisible() or ArmorPanel:IsVisible() or SettingsPanel:IsVisible();
                         if (not MouseIsOver(self) and not isAnyPanelVisible) then
                             self:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
                         end; 
@@ -685,6 +697,47 @@ function onAddonReady()
                 appendScripts(mainPanel);
                 createButtons(mainPanel);
     
+                return mainPanel;
+            end,
+            mainPanelShort = function ()
+                local createMainPanel = function()
+                    return gui.createDefaultFrame({
+                        parent = UIParent,
+                        size = { width = 80, height = 80 },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = -60, y = 80 },
+                    });
+                end;
+
+                local appendScripts = function(mainPanel)
+                    mainPanel:SetScript("OnEnter", function(self)
+                        self:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
+                    end);
+                    mainPanel:SetScript("OnLeave", function(self)
+                        if (not MouseIsOver(self) and not SettingsPanel:IsVisible()) then
+                            self:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
+                        end; 
+                    end);
+                end;
+
+                local createButtons = function(mainPanel)
+                    mainPanel.Settings = gui.registerMainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = 0 },
+                        image = "settings",
+                        highlight = true,
+                        hint = texts.settings.title,
+                        functions = {
+                            showHint = showPanelHint,
+                            hideHint = hidePanelHint,
+                            swapPanel = function() swapPanel(SettingsPanel); end;
+                        },
+                    });
+                end;
+
+                local mainPanel = createMainPanel();
+                appendScripts(mainPanel);
+                createButtons(mainPanel);
                 return mainPanel;
             end,
             targetInfo = function()
@@ -1139,6 +1192,34 @@ function onAddonReady()
                         end;
                         createPlotsPart(settingsPanel);
                     end);
+
+                    local selectBtnContent = nil;
+                    if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = texts.settings.unselectPlot;
+                    else selectBtnContent = texts.settings.selectPlot;
+                    end;
+
+                    settingsPanel.SinglePlot.SelectButton = gui.createDefaultButton({
+                        parent = settingsPanel.SinglePlot,
+                        direction = { x = "BOTTOMRIGHT", y = "BOTTOMRIGHT" },
+                        coords = { x = -24, y = 24 },
+                        size = { width = 124, height = 32 },
+                        content = selectBtnContent,
+                    });
+
+                    settingsPanel.SinglePlot.SelectButton:SetScript("OnClick", function()
+                        if (plotID == playerInfo.settings.currentPlot) then
+                            playerInfo.settings.currentPlot = nil;
+                        else
+                            playerInfo.settings.currentPlot = plotID;
+                        end;
+                        settingsPanel.RefreshPlotList();
+                        if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
+                        if (targetInfoFrame) then targetInfoFrame:Hide(); end;
+                        if (StatPanel) then StatPanel:Hide(); end;
+                        if (DicePanel) then DicePanel:Hide(); end;
+                        if (ArmorPanel) then ArmorPanel:Hide(); end;
+                        onAddonReady();
+                    end);
                 end;
 
                 settingsPanel.RefreshPlotList = function()
@@ -1158,6 +1239,28 @@ function onAddonReady()
         };
     end;
 
+    local preloadChecks = function(context)
+        if (context == nil) then return 'NO_PLOT_SELECTED' end;
+
+        if (not(IsHashOK(context))) then
+            message(texts.err.hashIsWrong);
+            context = {
+                hash = 2034843419,
+                stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
+                progress = { expr = 0, lvl = 1 },
+                flags = { isInBattle = 0 },
+                armor = { legs = "nothing", head = "nothing", body = "nothing" },
+                params = { shield = 0, points = 100, health = 3 },
+            }
+
+            context.params.points = calculatePoints(context.stats, context.progress);
+            context.params.health = calculateHealth(context.stats);
+            playerInfo[playerInfo.settings.currentPlot] = context;
+        end;
+
+        return 'OK';
+    end;
+
     playerInfo = playerInfo or {
         savedPlots = { },
         settings = {
@@ -1170,37 +1273,34 @@ function onAddonReady()
     };
 
     currentContext = getPlayerContext(playerInfo);
-    if (currentContext == nil) then return end;
-
-    if (not(IsHashOK(currentContext))) then
-        message(texts.err.hashIsWrong);
-        currentContext = {
-            hash = 2034843419,
-            stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
-            progress = { expr = 0, lvl = 1 },
-            flags = { isInBattle = 0 },
-            armor = { legs = "nothing", head = "nothing", body = "nothing" },
-            params = { shield = 0, points = 100, health = 3 },
-        }
-
-        currentContext.params.points = calculatePoints(currentContext.stats, currentContext.progress);
-        currentContext.params.health = calculateHealth(currentContext.stats);
-        playerInfo[playerInfo.settings.currentPlot] = currentContext;
-    end;
-
+    local addonStatus = preloadChecks(currentContext);
     local generator = viewGenerator(currentContext);
-    --- Основная панель ---
-    MainPanelSTIK = generator.mainPanel();
-    --- Панель цели ---
-    targetInfoFrame = generator.targetInfo();
-    --- Статы ---
-    StatPanel = generator.statPanel(MainPanelSTIK);
-    --- Панель кубов ---
-    DicePanel = generator.dicePanel(MainPanelSTIK);
-    --- Панель брони ---
-    ArmorPanel = generator.armorPanel(MainPanelSTIK);
-    --- Панель настроек ---
-    SettingsPanel = generator.settingsPanel(MainPanelSTIK);
+
+    local addonStatusConnector = {
+        OK = function()
+            --- Основная панель ---
+            MainPanelSTIK = generator.mainPanel();
+            --- Панель цели ---
+            targetInfoFrame = generator.targetInfo();
+            --- Статы ---
+            StatPanel = generator.statPanel(MainPanelSTIK);
+            --- Панель кубов ---
+            DicePanel = generator.dicePanel(MainPanelSTIK);
+            --- Панель брони ---
+            ArmorPanel = generator.armorPanel(MainPanelSTIK);
+            --- Панель настроек ---
+            SettingsPanel = generator.settingsPanel(MainPanelSTIK);
+        end,
+        NO_PLOT_SELECTED = function()
+            --- Основная панель (только настройки) ---
+            MainPanelSTIK = generator.mainPanelShort();
+            --- Панель настроек ---
+            SettingsPanel = generator.settingsPanel(MainPanelSTIK);
+        end,
+    }
+
+    addonStatusConnector[addonStatus]();
+
 end;
 
 function onDMSaySomething(prefix, msg, tp, sender)
