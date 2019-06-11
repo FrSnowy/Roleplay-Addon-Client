@@ -395,6 +395,8 @@ function onAddonReady()
                 function()
                     stats[settings.stat] = helpers.modifyStat(texts.jobs.add, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.params.health = calculateHealth(stats);
+                    MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
                     playerContext.hash = tonumber(STIKStatHash(playerContext));
                 end
             );
@@ -409,6 +411,8 @@ function onAddonReady()
                 function()
                     stats[settings.stat] = helpers.modifyStat(texts.jobs.remove, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.params.health = calculateHealth(stats);
+                    MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
                     playerContext.hash = tonumber(STIKStatHash(playerContext));
                 end
             );
@@ -423,6 +427,8 @@ function onAddonReady()
                 function()
                     stats[settings.stat] = helpers.modifyStat(texts.jobs.clear, stats[settings.stat], playerContext);
                     panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.params.health = calculateHealth(stats);
+                    MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
                     playerContext.hash = tonumber(STIKStatHash(playerContext));
                 end
             );
@@ -746,9 +752,9 @@ function onAddonReady()
                 local createTargetFrame = function ()
                     return gui.createDefaultFrame({
                         parent = TargetFrame,
-                        size = { width = TargetFrameHealthBar:GetWidth() + 20, height = 50 },
+                        size = { width = TargetFrameHealthBar:GetWidth(), height = 32 },
                         aligment = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
-                        point = { x = -5, y = 5 },
+                        point = { x = 0, y = 0 },
                     });
                 end;
 
@@ -757,12 +763,14 @@ function onAddonReady()
                     targetFrame.AttackablePanel:EnableMouse(); 
                     targetFrame.AttackablePanel:SetWidth(smallestButton.width);
                     targetFrame.AttackablePanel:SetHeight(smallestButton.height);
-                    targetFrame.AttackablePanel:SetPoint("CENTER", targetFrame, "CENTER", 0, 0);
+                    targetFrame.AttackablePanel:SetPoint("RIGHT", targetFrame, "RIGHT", 0, 0);
                     targetFrame.AttackablePanel:SetScript("OnEnter", showPanelHint);
                     targetFrame.AttackablePanel:SetScript("OnLeave", hidePanelHint);
                 end;
 
                 local targetFrame = createTargetFrame();
+                targetFrame:SetBackdrop(nil);
+                targetFrame:Hide();
                 createAttackableStatus(targetFrame);
                 return targetFrame;
             end,
@@ -1341,85 +1349,132 @@ end;
 
 function onDMSaySomething(prefix, msg, tp, sender)
     if (not(prefix == 'STIK_SYSTEM')) then return end;
-    local COMMAND, VALUE = strsplit('&', msg);
+    local COMMAND, VALUE, PLOT = strsplit('&', msg);
+
+    if (not(COMMAND == 'invite_to_plot') and not(COMMAND == 'invite_to_evt') and not(COMMAND == 'event_stop')) then
+        if (not(playerInfo.settings.isEventStarted)) then
+            SendAddonMessage("STIK_PLAYER_ANSWER", "not_on_event", "WHISPER", sender);
+            return;
+        end;
+
+        if (not(playerInfo.settings.currentPlot == PLOT)) then
+            SendAddonMessage("STIK_PLAYER_ANSWER", "not_on_plot", "WHISPER", sender);
+        end;
+    end;
+
+    local currentPlot = nil;
+    if (PLOT) then currentPlot = playerInfo[PLOT]; end;
+
+    local commandHelpers = {
+        clearTalantes = function (plot)
+            plot.stats.str = 0;
+            plot.stats.ag = 0;
+            plot.stats.snp = 0;
+            plot.stats.mg = 0;
+            plot.stats.body = 0;
+            plot.stats.moral = 0;
+            plot.params.points = calculatePoints(plot.stats, plot.progress);
+            print("СИСТЕМА: Очки талантов сброшены!");
+        end,
+        updateStats = function (plot)
+            StatPanel.stat_str:SetText(texts.stats.str..": "..plot.stats.str);
+            StatPanel.stat_ag:SetText(texts.stats.ag..": "..plot.stats.ag);
+            StatPanel.stat_snp:SetText(texts.stats.snp..": "..plot.stats.snp);
+            StatPanel.stat_mg:SetText(texts.stats.mg..": "..plot.stats.mg);
+            StatPanel.stat_body:SetText(texts.stats.body..": "..plot.stats.body);
+            StatPanel.stat_moral:SetText(texts.stats.moral..": "..plot.stats.moral);
+            StatPanel.Level:SetText(texts.stats.level..": "..plot.progress.lvl);
+            StatPanel.Exp:SetText(texts.stats.expr..": "..plot.progress.expr.."/"..plot.progress.lvl * 1000);
+            StatPanel.Avl:SetText(texts.stats.avaliable..": "..calculatePoints(plot.stats, plot.progress));
+
+            plot.params.health = calculateHealth(plot.stats);
+            MainPanelSTIK.HP.Text:SetText(plot.params.health);
+        end,
+        getMaxHP = function(plot)
+            return 3 + math.floor(plot.stats.body / 20)
+        end,
+    };
 
     local commandConnector = {
         give_exp = function(experience)
-            local experience = tonumber(experience, 10);
-            if (experience >= 0) then
-                print("СИСТЕМА: Вы получили "..experience.." exp");
-                progress.expr = progress.expr + experience;
-                if (progress.expr >= neededExpr) then
+            local expr = tonumber(experience, 10);
+            local progress = currentPlot.progress;
+            local params = currentPlot.params;
+            local stats = currentPlot.stats;
+
+            progress.expr = progress.expr + expr;
+            if (expr > 0) then
+                print("СИСТЕМА: Вы получили "..expr.." exp");
+                if (progress.expr >= progress.lvl * 1000) then
                     progress.lvl = progress.lvl + 1;
-                    progress.expr = progress.expr - neededExpr;
-                    neededExpr = progress.lvl * 1000;
-                    params.points = calculatePoints(stats, progress);
+                    progress.expr = progress.expr - ((progress.lvl - 1) * 1000);
+                    params.points = calculatePoints(currentPlot.stats, currentPlot.progress);
                     print("СИСТЕМА: Ваш уровень был повышен!");
-                end
+                end;
             else
-                print("СИСТЕМА: Вы потеряли "..math.abs(experience).." exp");
-                progress.expr = progress.expr + experience;
+                print("СИСТЕМА: Вы потеряли "..math.abs(expr).." exp");
                 if (progress.expr < 0) then
                     if (progress.lvl > 1) then
                         local diff = math.abs(progress.expr);
-                        progress.lvl = progress.lvl - 1;
-                        neededExpr = progress.lvl * 1000;
-                        progress.expr = neededExpr - diff;
-                        clearTalantes();
+                        progress.lvl = currentPlot.progress.lvl - 1;
+                        progress.expr = (progress.lvl * 1000) - diff;
                         print("СИСТЕМА: Ваш уровень был понижен!");
-                    else
-                        progress.expr = 0;
+                        commandHelpers.clearTalantes(currentPlot);
+                    else progress.expr = 0;
                     end;
                 end;
             end;
-            updateStats();
+            commandHelpers.updateStats(currentPlot);
         end,
         set_level = function(level)
             local level = tonumber(level, 10);
+            local progress = currentPlot.progress;
             local shouldClearParams = level < progress.lvl;
             progress.lvl = level;
             print('СИСТЕМА: Уровень установлен на '..progress.lvl);
-            neededExpr = progress.lvl * 1000;
             progress.expr = 0;
-            if shouldClearParams then clearTalantes(); end;
-            updateStats();
+            if shouldClearParams then commandHelpers.clearTalantes(currentPlot) end;
+            commandHelpers.updateStats(currentPlot);
         end,
-        get_info = function(DMName)
-            SendChatMessage('Версия: 1.0.0', "WHISPER", nil, DMName);
-            SendChatMessage(texts.stats.str..": "..stats.str.." "..texts.stats.ag..": "..stats.ag.." "..texts.stats.snp..": "..stats.snp, "WHISPER", nil, DMName);
-            SendChatMessage(texts.stats.mg..": "..stats.mg.." "..texts.stats.body..": "..stats.body.." "..texts.stats.moral..": "..stats.moral, "WHISPER", nil, DMName);
-            SendChatMessage(texts.stats.level..": "..progress.lvl.." "..texts.stats.expr..": "..progress.expr.." "..texts.stats.avaliable..": "..params.points, "WHISPER", nil, DMName);
-            SendChatMessage("ХП: "..params.health, "WHISPER", nil, DMName);
-            SendChatMessage("Щит: "..params.shield, "WHISPER", nil, DMName);
+        get_info = function()
+            local stats = currentPlot.stats;
+            local progress = currentPlot.progress;
+            local params = currentPlot.params;
+            local flags = currentPlot.flags;
+            SendChatMessage('Версия: 2.0.0', "WHISPER", nil, sender);
+            SendChatMessage("STR:"..stats.str.." AG:"..stats.ag.." SNP:"..stats.snp.." MG:"..stats.mg.." BODY:"..stats.body.." MRL:"..stats.moral, "WHISPER", nil, sender);
+            SendChatMessage("LVL:"..progress.lvl.." EXPR:"..progress.expr.."/"..(progress.lvl * 1000).." PNT:"..params.points, "WHISPER", nil, sender);
+            SendChatMessage("HP:"..params.health.." SHLD:"..params.shield, "WHISPER", nil, sender);
             if (flags.isInBattle == 0) then
-                SendChatMessage("Не в бою", "WHISPER", nil, DMName);
+                SendChatMessage("Не в бою", "WHISPER", nil, sender);
             else
-                SendChatMessage("В бою", "WHISPER", nil, DMName);
+                SendChatMessage("В бою", "WHISPER", nil, sender);
             end;
         end,
         mod_hp = function(health)
+            local params = currentPlot.params;
+            local stats = currentPlot.stats;
             local health = tonumber(health, 10);
-            if (params.health + health <= 3 + math.floor(stats.body / 20)) then
-                params.health = params.health + health;
-                if (params.health < 0) then params.health = 0; end;
-                MainPanelSTIK.HP.Text:SetText(params.health);
-                if (health < 0) then 
-                    print('Вы потеряли '..math.abs(health)..' ХП')
-                else
-                    print('Вы получили '..math.abs(health)..' ХП')
+
+            if (params.health + health <= commandHelpers.getMaxHP(currentPlot)) then
+                currentPlot.params.health = currentPlot.params.health + health;
+                if (currentPlot.params.health < 0) then currentPlot.params.health = 0; end;
+                if (health < 0) then print('Вы потеряли '..math.abs(health)..' ХП')
+                else print('Вы получили '..math.abs(health)..' ХП')
                 end;
-                if (params.health == 0) then 
+                if (currentPlot.params.health == 0) then 
                     print('Вы не можете продолжать бой');
                     SendChatMessage('(( Выведен из боя ))');
                 end;
             else
-                print ('Вам пытались выдать ' ..math.abs(health).. ' ХП, но ваше максимальное значение - ' ..3 + math.floor(stats.body / 20));
+                print ('Вам пытались выдать ' ..math.abs(health).. ' ХП, но ваше максимальное значение - ' ..commandHelpers.getMaxHP(currentPlot));
                 print ('Значение здоровья было установлено в макс., лишние ХП - уничтожены');
                 params.health = calculateHealth(stats);
-                MainPanelSTIK.HP.Text:SetText(params.health);
             end;
+            MainPanelSTIK.HP.Text:SetText(params.health);
         end,
         change_battle_state = function(battleState)
+            local flags = currentPlot.flags;
             local battleState = tonumber(battleState, 10);
             if (battleState == 0) then
                 print('Вы вышли из режима боя');
@@ -1430,6 +1485,9 @@ function onDMSaySomething(prefix, msg, tp, sender)
             end;
         end,
         restore_hp = function()
+            local params = currentPlot.params;
+            local stats = currentPlot.stats;
+
             params.health = calculateHealth(stats);
             print('Ваши ХП были восстановлены');
             MainPanelSTIK.HP.Text:SetText(params.health);
@@ -1442,23 +1500,25 @@ function onDMSaySomething(prefix, msg, tp, sender)
             StopMusic();
         end,
         mod_barrier = function(barrierScore)
+            local params = currentPlot.params;
+
             local score = tonumber(barrierScore, 10);
             params.shield = params.shield + score;
             if (params.shield < 0) then params.shield = 0; end;
-            MainPanelSTIK.Shield.Text:SetText(params.shield);
-            if (score < 0) then 
-                print('Вы потеряли '..math.abs(score)..' пункт(-ов) барьера')
-            else
-                print('Вы получили '..math.abs(score)..' пункт(-ов) барьера')
+            if (score < 0) then print('Вы потеряли '..math.abs(score)..' пункт(-ов) барьера')
+            else print('Вы получили '..math.abs(score)..' пункт(-ов) барьера')
             end;
             if (params.shield == 0) then print('Вы лишились барьера!'); end;
+            
+            MainPanelSTIK.Shield.Text:SetText(params.shield);
         end,
         damage = function (points)
+            local params = currentPlot.params;
+
             local dmg = tonumber(points, 10);
             if (params.shield >= dmg) then
                 params.shield = params.shield - dmg;
                 print('Вы получили '..dmg.. ' урона. Он был поглощён щитом');
-                MainPanelSTIK.Shield.Text:SetText(params.shield);
                 if (params.shield == 0) then print('Вы потеряли наложенный на вас щит!'); end;
             elseif (params.shield > 0 and params.shield - dmg < 0) then
                 local afterShieldDamage = math.abs(params.shield - dmg);
@@ -1471,8 +1531,6 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     print('Вы не можете продолжать бой');
                     SendChatMessage('(( Выведен из боя ))');
                 end;
-                MainPanelSTIK.HP.Text:SetText(params.health);
-                MainPanelSTIK.Shield.Text:SetText(params.shield);
             elseif (params.shield == 0 and params.health >= 0) then
                 params.health = params.health - math.abs(dmg);
                 print('Вы получили '..dmg..' урона.');
@@ -1481,16 +1539,14 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     print('Вы не можете продолжать бой');
                     SendChatMessage('(( Выведен из боя ))');
                 end;
-                MainPanelSTIK.HP.Text:SetText(params.health);
             end;
+            MainPanelSTIK.HP.Text:SetText(params.health);
+            MainPanelSTIK.Shield.Text:SetText(params.shield);
         end,
-        kick = function()
-            ForceQuit();
-        end,
-        play_effect = function(effect)
+        --[[play_effect = function(effect)
             local _type, number = strsplit("_", effect);
             PlaySoundFile("Interface\\AddOns\\STIKSystem\\EFFECTS\\".._type.."\\"..number..".mp3", "Ambience")
-        end,
+        end,]]--
         invite_to_plot = function(plotInfo)
             local master, meta, title, description = strsplit('~', plotInfo);
 
@@ -1713,6 +1769,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
     };
 
     commandConnector[COMMAND](VALUE);
+    if (currentPlot) then currentPlot.hash = STIKStatHash(currentPlot); end;
 end;
 
 function acceptEventInvite()
@@ -1730,33 +1787,18 @@ function sendRaidRequest()
     end;
 end;
 
-function clearTalantes()
-    stats.str = 0;
-    stats.ag = 0;
-    stats.snp = 0;
-    stats.mg = 0;
-    stats.body = 0;
-    stats.moral = 0;
-    params.points = calculatePoints(stats, progress);
-    print("СИСТЕМА: Очки талантов сброшены!");
-end;
-
-function updateStats()
-    StatPanel.stat_str:SetText(texts.stats.str..": "..stats.str);
-    StatPanel.stat_ag:SetText(texts.stats.ag..": "..stats.ag);
-    StatPanel.stat_snp:SetText(texts.stats.snp..": "..stats.snp);
-    StatPanel.stat_mg:SetText(texts.stats.mg..": "..stats.mg);
-    StatPanel.stat_body:SetText(texts.stats.body..": "..stats.body);
-    StatPanel.stat_moral:SetText(texts.stats.moral..": "..stats.moral);
-    StatPanel.Level:SetText(texts.stats.level..": "..progress.lvl);
-    StatPanel.Exp:SetText(texts.stats.expr..": "..progress.expr.."/"..neededExpr);
-    StatPanel.Avl:SetText(texts.stats.avaliable..": "..calculatePoints(stats, progress));
-
-    params.health = calculateHealth(stats);
-    MainPanelSTIK.HP.Text:SetText(params.health);
-end
-
 function showTargetInfo(selectionType)
+    if (not(playerInfo.settings.isEventStarted)) then
+        return nil;
+    end;
+
+    local currentPlot = playerInfo.settings.currentPlot;
+    if (not(playerInfo[currentPlot])) then
+        return nil;
+    end;
+
+    local flags = playerInfo[currentPlot].flags;
+
     local targetName = UnitName("target");
     local isTargetExists = not (targetName == nil)
     local isTargetPlayer = UnitPlayerControlled("target")
@@ -1799,7 +1841,7 @@ function STIKMiniMapButton_Reposition()
 end
 
 function STIKMiniMapButtonPosition_LoadFromDefaults()
-	STIKButton:SetPoint("TOPLEFT","Minimap","TOPLEFT",STIKMiniMapButtonPosition.x,STIKMiniMapButtonPosition.y)
+	STIKMiniMapButton:SetPoint("TOPLEFT","Minimap","TOPLEFT",STIKMiniMapButtonPosition.x,STIKMiniMapButtonPosition.y)
 end
 
 function STIK_Minimap_Update()
