@@ -486,6 +486,12 @@ function onAddonReady()
                             print('Дополнительный модификатор от брони: '..penaltyOfArmor);
                             print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
                             print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
+                        else
+                            print('Бросок куба: '..texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                        end;
+
+                        if (playerInfo.settings.isEventStarted) then
+                            SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
                         end;
                         RandomRoll(minRoll, maxRoll);
                     end
@@ -542,10 +548,20 @@ function onAddonReady()
             local function setArmorTypeScript(view)
                 view:SetScript("OnClick",
                     function()
-                        local slot = settings.parent.slot;
-                        armor[slot] = settings.armorType;
-                        settings.parent.connectedWith:SetText(texts.armor[slot]..": "..texts.armorTypes[armor[slot]]);
-                        playerContext.hash = tonumber(STIKStatHash(playerContext));
+                        
+                        local currentPlot = playerInfo.settings.currentPlot;
+                        local flags = playerInfo[currentPlot].flags;
+
+                        if (flags.isInBattle == 1) then
+                            print('Нельзя менять броню в бою');
+                            return nil;
+                        else
+                            local slot = settings.parent.slot;
+                            armor[slot] = settings.armorType;
+                            settings.parent.connectedWith:SetText(texts.armor[slot]..": "..texts.armorTypes[armor[slot]]);
+                            playerContext.hash = tonumber(STIKStatHash(playerContext));
+                            settings.parent:Hide();
+                        end;
                     end
                 )
             end
@@ -1429,8 +1445,11 @@ function onDMSaySomething(prefix, msg, tp, sender)
         set_level = function(level)
             local level = tonumber(level, 10);
             local progress = currentPlot.progress;
+            local params = currentPlot.params;
+            local stats = currentPlot.stats;
             local shouldClearParams = level < progress.lvl;
             progress.lvl = level;
+            params.points = calculatePoints(stats, progress);
             print('СИСТЕМА: Уровень установлен на '..progress.lvl);
             progress.expr = 0;
             if shouldClearParams then commandHelpers.clearTalantes(currentPlot) end;
@@ -1441,7 +1460,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             local progress = currentPlot.progress;
             local params = currentPlot.params;
             local flags = currentPlot.flags;
-            SendChatMessage('Версия: 2.0.0', "WHISPER", nil, sender);
+            SendChatMessage('Версия: 2.0.1', "WHISPER", nil, sender);
             SendChatMessage("STR:"..stats.str.." AG:"..stats.ag.." SNP:"..stats.snp.." MG:"..stats.mg.." BODY:"..stats.body.." MRL:"..stats.moral, "WHISPER", nil, sender);
             SendChatMessage("LVL:"..progress.lvl.." EXPR:"..progress.expr.."/"..(progress.lvl * 1000).." PNT:"..params.points, "WHISPER", nil, sender);
             SendChatMessage("HP:"..params.health.." SHLD:"..params.shield, "WHISPER", nil, sender);
