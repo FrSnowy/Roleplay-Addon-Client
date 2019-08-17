@@ -1,3 +1,5 @@
+-- Динамические элементы для панелей --
+
 STIKRegister = {
     mainButton = function (settings)
         local function setButtonView(view)

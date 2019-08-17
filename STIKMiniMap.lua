@@ -1,3 +1,5 @@
+-- Функции для работы кнопки на мини-карте --
+
 function STIKMiniMapButton_OnClick()
     if MainPanelSTIK:IsVisible() then MainPanelSTIK:Hide();
     else MainPanelSTIK:Show();

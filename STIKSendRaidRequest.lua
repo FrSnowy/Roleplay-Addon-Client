@@ -1,3 +1,4 @@
+-- ХЗ че это --
 function sendRaidRequest()
     if (SHOULD_ACCEPT_NEXT_INVITE) then
         StaticPopup_Hide("PARTY_INVITE");

@@ -1,3 +1,5 @@
+-- Проверить расстоянине до цели и показать значок атаки ближнего боя, если необходимо --
+
 function showTargetInfo(selectionType)
     if (not(playerInfo.settings.isEventStarted)) then
         return nil;

@@ -1,3 +1,5 @@
+-- Сортировка таблиц по индексу --
+
 function STIKSortTable(dict)
     local keys = { };
     for key in pairs(dict) do table.insert(keys, key) end;

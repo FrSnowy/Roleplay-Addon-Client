@@ -1,3 +1,5 @@
+-- Другие функции --
+
 STIKSharedFunctions = {
     calculatePoints = function (stats, progress)
         return 100 + 5 * (progress.lvl - 1) - (stats.str + stats.ag + stats.snp + stats.mg + stats.body + stats.moral);

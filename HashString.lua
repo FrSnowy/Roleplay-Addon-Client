@@ -1,3 +1,5 @@
+-- Взятие хэша строки --
+
 function STIKStringHash(text)
     local counter = 1
     local len = string.len(text)

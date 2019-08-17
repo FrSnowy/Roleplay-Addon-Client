@@ -1,3 +1,5 @@
+-- Создание и управление типичными ГУИ-элементами --
+
 SnowGUI = function ()
     return {
         showPanelHint = function(self)
