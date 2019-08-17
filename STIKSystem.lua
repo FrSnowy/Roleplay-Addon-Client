@@ -1,193 +1,25 @@
---- Переменные для панелей ---
-local button = {
-    width = 32,
-    height = 32,
-};
-
-local smallButton = {
-    width = button.width - 6,
-    height = button.height - 6,
-};
-
-local smallestButton = {
-    width = 16,
-    height = 16,
-};
-
-local texts = {
-    stats = {
-        str = "Сила",
-        ag = "Ловкость",
-        snp = "Точность",
-        mg = "Маг. способности",
-        body = "Крепость",
-        moral = "Мораль",
-        luck = "Удача",
-        level = "Уровень",
-        hp = "Здоровье",
-        shield = "Барьеры, щиты",
-        armor = "Носимые доспехи",
-
-        stat = "Характеристики",
-        expr = "Опыт",
-        avaliable = "Доступно",
-    },
-    jobs = {
-        add = "add",
-        remove = "remove",
-        clear = "clear",
-    },
-    dices = "Кубы",
-    settings = {
-        title = "Настройки",
-        getPlotInv = "Получать приглашения в сюжеты",
-        getEventInv = "Получать приглашения на события",
-        showDeclineMessages = "Показывать уведомления об отказе",
-        showRollInfo = "Показывать информацию о броске",
-        parameters = "Параметры",
-        parts = "Сохраненные сюжеты",
-        plot = "Сюжет",
-        removePlot = "Удалить",
-        selectPlot = "Активировать",
-        unselectPlot = "Деактивировать",
-        activeEventTitle = "Активный сюжет",
-        unactivateButton = "Покинуть текущее событие"
-    },
-    err = {
-        battle = "Нельзя изменить значение характеристики в процессе боя",
-        hashIsWrong = "Кажется, параметры игрока были изменены из файла игры. Все параметры сброшены к нулю.",
-    },
-    canBeAttacked = {
-        ok = "Цель может быть атакована в ближнем бою",
-        notOK = "Цель не может быть атакована в ближнем бою",
-    },
-    armor = {
-        head = "Шлем",
-        body = "Нагрудник",
-        legs = "Ноги",
-    },
-    armorTypes = {
-        cloth = "Ткань",
-        leather = "Кожа",
-        mail = "Кольчуга",
-        plate = "Латы",
-        nothing = "Ничего",
-    },
-};
-
---- Интеракции для панелии ---
-function showPanelHint(self)
-    if (self.hint) then
-        GameTooltip:SetOwner(self,"ANCHOR_TOP");
-        GameTooltip:AddLine(self.hint);
-        GameTooltip:Show();
-    end
-end
-
-function hidePanelHint(self)
-    if GameTooltip:IsOwned(self) then
-        GameTooltip:Hide();
-    end
-end
-
-function swapPanel(panel)
-    if panel:IsVisible() then panel:Hide();
-    else panel:Show();
-    end
-end
-
-function calculatePoints(stats, progress)
-    return 100 + 5 * (progress.lvl - 1) - (stats.str + stats.ag + stats.snp + stats.mg + stats.body + stats.moral);
-end
-
-function calculateHealth(stats)
-    return 3 + math.floor(stats.body / 20);
-end
-
-function getPlayerContext(playerInfo)
-    if (playerInfo.settings.currentPlot == nil) then
-        return nil;
-    else
-        return playerInfo[playerInfo.settings.currentPlot];
-    end;
-end;
-
-function STIKSortTable(dict)
-    local keys = { };
-    for key in pairs(dict) do table.insert(keys, key) end;
-    table.sort(keys)
-
-    local sortedDict = { };
-    for _, key in ipairs(keys) do sortedDict[key] = dict[key] end;
-    return sortedDict;
-end;
-
-function STIKStringHash(text)
-    local counter = 1
-    local len = string.len(text)
-    for i = 1, len, 3 do 
-      counter = math.fmod(counter*8161, 4294967279) +
-          (string.byte(text,i)*16776193) +
-          ((string.byte(text,i+1) or (len-i+256))*8372226) +
-          ((string.byte(text,i+2) or (len-i+256))*3932164)
-    end
-    return math.fmod(counter, 4294967291)
-end
-
-function STIKStatHash(playerContext)
-    local getDictionaryAsString = function (dict)
-        local dictString = "";
-        for key, value in pairs(dict) do
-            dictString = dictString.."&"..key.."="..value
-        end;
-
-        return dictString;
-    end;
-    
-    local statString = getDictionaryAsString(STIKSortTable(playerContext.stats));
-    local flagsString = getDictionaryAsString(STIKSortTable(playerContext.flags));
-    local armorString = getDictionaryAsString(STIKSortTable(playerContext.armor));
-    local progressString = getDictionaryAsString(STIKSortTable(playerContext.progress));
-    local paramsString = getDictionaryAsString(STIKSortTable(playerContext.params));
-
-    local summaryString = statString..flagsString..armorString..progressString..paramsString;
-    return STIKStringHash(summaryString);
-end;
-
-function IsHashOK(playerContext)
-    local hashofStats = STIKStatHash(playerContext);
-    local hashOfCtx = playerContext.hash;
-    return tonumber(hashofStats) == tonumber(hashOfCtx);
-end;
-
 function onAddonReady()
-    -- Брать со знаком минус --
-    -- Больше нуля - добавление, меньше - штраф --
-    local armorPenalty = {
-        head = {
-            nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, moral = -0.05, luck = 0 },
-            cloth = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, moral = 0, luck = 0 },
-            leather = { str = 0, ag = -0.03, snp = -0.05, mg = 0, body = 0, moral = 0, luck = 0 },
-            mail = { str = 0, ag = -0.05, snp = -0.1,  mg = 0, body = 0.05, moral = 0.05, luck = 0 },
-            plate = { str = 0, ag = -0.07, snp = -0.2, mg = 0, body = 0.1, moral = 0.1, luck = 0 },
-        },
-        body = {
-            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, moral = -0.2, luck = 0 },
-            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, moral = 0, luck = 0 },
-            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, moral = 0.03, luck = 0 },
-            mail = { str = 0.05, ag = -0.05, snp = -0.05, mg = -0.02, body = 0.05, moral = 0.07, luck = 0 },
-            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.2, moral = 0.1, luck = 0 },
-        },
-        legs = {
-            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, moral = -0.5, luck = 0 },
-            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, moral = 0, luck = 0 },
-            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, moral = 0.03, luck = 0 },
-            mail = { str = 0.05, ag = -0.05, snp = 0, mg = -0.02, body = 0.05, moral = 0.07, luck = 0 },
-            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.1, moral = 0.1, luck = 0 },
-        },
-    };
     --- Функции, которые работают с гуем без контекста ---
     gui = {
+        showPanelHint = function(self)
+            if (self.hint) then
+                GameTooltip:SetOwner(self,"ANCHOR_TOP");
+                GameTooltip:AddLine(self.hint);
+                GameTooltip:Show();
+            end
+        end,
+        hidePanelHint = function(self)
+            if GameTooltip:IsOwned(self) then
+                GameTooltip:Hide();
+            end
+        end,
+        swapPanel = function(panel)
+            if panel:IsVisible() then
+                panel:Hide();
+            else
+                panel:Show();
+            end
+        end,
         createLine = function (settings)
             local panel = settings.parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
                 panel:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
@@ -212,7 +44,7 @@ function onAddonReady()
         end,
         registerMainButton = function (settings)
             local function setButtonView(view)
-                view:SetSize(button.width, button.height);
+                view:SetSize(STIKConstants.button.width, STIKConstants.button.height);
                 view:SetPoint("CENTER", settings.parent, "CENTER", settings.coords.x, settings.coords.y);
                 view:RegisterForClicks("AnyUp");
                 view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
@@ -237,7 +69,7 @@ function onAddonReady()
         end,
         registerDice = function (settings)
             local function setDiceView(view)
-                view:SetSize(smallButton.width, smallButton.height);
+                view:SetSize(STIKConstants.smallButton.width, STIKConstants.smallButton.height);
                 view:SetPoint("CENTER", settings.views.parent, "CENTER", settings.coords.x, -10 + settings.coords.y);
                 view:RegisterForClicks("AnyUp");
                 view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
@@ -246,8 +78,8 @@ function onAddonReady()
             end
 
             local function setDiceScripts(view)
-                view:SetScript("OnEnter", showPanelHint);
-                view:SetScript("OnLeave", hidePanelHint);
+                view:SetScript("OnEnter", gui.showPanelHint);
+                view:SetScript("OnLeave", gui.hidePanelHint);
                 view:SetScript("OnClick",
                     function()
                         local prevStat = settings.views.menu.stat;
@@ -352,35 +184,35 @@ function onAddonReady()
             local isInBattle = not(flags.isInBattle == 0);
             
             if (isInBattle) then
-                print(texts.err.battle);
+                print(STIKConstants.texts.err.battle);
                 return stat;
             end;
 
             local prevStatValue = stat;
             local jobConnector = {
-                [texts.jobs.add] = function()
+                [STIKConstants.texts.jobs.add] = function()
                     if (stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then return stat + 1;
                     else return stat; end;
                 end,
-                [texts.jobs.remove] = function()
+                [STIKConstants.texts.jobs.remove] = function()
                     if (stat > 0) then return stat - 1;
                     else return 0; end;
                 end,
-                [texts.jobs.clear] = function()
+                [STIKConstants.texts.jobs.clear] = function()
                     return 0;
                 end,
             };
 
             stat = jobConnector[job]();
             params.points = params.points - (stat - prevStatValue);
-            StatPanel.Avl:SetText(texts.stats.avaliable..": "..params.points);
+            StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..params.points);
             return stat;
         end,
         registerStat = function (settings, playerContext)
             local stats = playerContext.stats;
             local panel = gui.createLine({
                 parent = settings.parent,
-                content = texts.stats[settings.stat]..": "..stats[settings.stat],
+                content = STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat],
                 coords = settings.coords,
                 direction = { x = "LEFT", y = "TOP" }
             });
@@ -393,11 +225,11 @@ function onAddonReady()
     
             AddButton:SetScript("OnClick",
                 function()
-                    stats[settings.stat] = helpers.modifyStat(texts.jobs.add, stats[settings.stat], playerContext);
-                    panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
-                    playerContext.params.health = calculateHealth(stats);
+                    stats[settings.stat] = helpers.modifyStat(STIKConstants.texts.jobs.add, stats[settings.stat], playerContext);
+                    panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                     MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
-                    playerContext.hash = tonumber(STIKStatHash(playerContext));
+                    playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
                 end
             );
     
@@ -409,11 +241,11 @@ function onAddonReady()
             
             RemoveButton:SetScript("OnClick",
                 function()
-                    stats[settings.stat] = helpers.modifyStat(texts.jobs.remove, stats[settings.stat], playerContext);
-                    panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
-                    playerContext.params.health = calculateHealth(stats);
+                    stats[settings.stat] = helpers.modifyStat(STIKConstants.texts.jobs.remove, stats[settings.stat], playerContext);
+                    panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                     MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
-                    playerContext.hash = tonumber(STIKStatHash(playerContext));
+                    playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
                 end
             );
             
@@ -425,11 +257,11 @@ function onAddonReady()
         
             ClearButton:SetScript("OnClick",
                 function()
-                    stats[settings.stat] = helpers.modifyStat(texts.jobs.clear, stats[settings.stat], playerContext);
-                    panel:SetText(texts.stats[settings.stat]..": "..stats[settings.stat]);
-                    playerContext.params.health = calculateHealth(stats);
+                    stats[settings.stat] = helpers.modifyStat(STIKConstants.texts.jobs.clear, stats[settings.stat], playerContext);
+                    panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
+                    playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                     MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
-                    playerContext.hash = tonumber(STIKStatHash(playerContext));
+                    playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
                 end
             );
     
@@ -464,9 +296,9 @@ function onAddonReady()
                         local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
     
                         local penaltyByArmor = {
-                            head = -armorPenalty.head[armor.head][usingStat],
-                            body = -armorPenalty.body[armor.body][usingStat],
-                            legs = -armorPenalty.legs[armor.legs][usingStat],
+                            head = -STIKConstants.armorPenalty.head[armor.head][usingStat],
+                            body = -STIKConstants.armorPenalty.body[armor.body][usingStat],
+                            legs = -STIKConstants.armorPenalty.legs[armor.legs][usingStat],
                         };
     
                         local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
@@ -478,7 +310,7 @@ function onAddonReady()
     
                         if (maxRoll == 0) then maxRoll = 1; end;
                         if (playerInfo.settings.showRollInfo) then
-                            print('Бросок куба: '..texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
                             print('Приведенный навык: '..math.ceil((diceSize * stats[usingStat])/100));
                             print('Модификатор от размера куба: '..string.sub(1 / penaltyOfDice, 0, 5));
                             print('Модификатор от ОЗ: '..modiferOfHealth);
@@ -487,11 +319,11 @@ function onAddonReady()
                             print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
                             print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
                         else
-                            print('Бросок куба: '..texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
                         end;
 
                         if (playerInfo.settings.isEventStarted) then
-                            SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
+                            SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..STIKConstants.texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
                         end;
                         RandomRoll(minRoll, maxRoll);
                     end
@@ -506,7 +338,7 @@ function onAddonReady()
             local armor = playerContext.armor;
             local armorLine = gui.createLine({
                 parent = settings.views.parent,
-                content = texts.armor[settings.slot]..": "..texts.armorTypes[armor[settings.slot]],
+                content = STIKConstants.texts.armor[settings.slot]..": "..STIKConstants.texts.armorTypes[armor[settings.slot]],
                 coords = settings.line.coords,
                 direction = settings.line.direction,
             });
@@ -541,7 +373,7 @@ function onAddonReady()
                 view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
                 view:SetHeight(23);
                 view:SetWidth(70);
-                view:SetText(texts.armorTypes[settings.armorType]);
+                view:SetText(STIKConstants.texts.armorTypes[settings.armorType]);
                 view:RegisterForClicks("AnyUp");
             end
     
@@ -558,8 +390,8 @@ function onAddonReady()
                         else
                             local slot = settings.parent.slot;
                             armor[slot] = settings.armorType;
-                            settings.parent.connectedWith:SetText(texts.armor[slot]..": "..texts.armorTypes[armor[slot]]);
-                            playerContext.hash = tonumber(STIKStatHash(playerContext));
+                            settings.parent.connectedWith:SetText(STIKConstants.texts.armor[slot]..": "..STIKConstants.texts.armorTypes[armor[slot]]);
+                            playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
                             settings.parent:Hide();
                         end;
                     end
@@ -616,51 +448,51 @@ function onAddonReady()
                 local createButtons = function(mainPanel)
                     mainPanel.Roll = gui.registerMainButton({
                         parent = mainPanel,
-                        coords = { x = 0, y = 3 * button.height + 10 },
+                        coords = { x = 0, y = 3 * STIKConstants.button.height + 10 },
                         image = "dice_pve", highlight = true,
-                        hint = texts.dices,
+                        hint = STIKConstants.texts.dices,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
                             swapPanel = function()
-                                swapPanel(DicePanel)
-                                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
-                                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
-                                if (SettingsPanel:IsVisible()) then swapPanel(SettingsPanel); end;
+                                gui.swapPanel(DicePanel)
+                                if (StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
+                                if (ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
+                                if (SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
                             end
                         },
                     });
                     mainPanel.Stat = gui.registerMainButton({
                         parent = mainPanel,
-                        coords = { x = 0, y = 2 * button.height },
+                        coords = { x = 0, y = 2 * STIKConstants.button.height },
                         image = "stat",
                         highlight = true,
-                        hint = texts.stats.stat,
+                        hint = STIKConstants.texts.stats.stat,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
                             swapPanel = function()
-                                swapPanel(StatPanel)
-                                if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
-                                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
-                                if (SettingsPanel:IsVisible()) then swapPanel(SettingsPanel); end;
+                                gui.swapPanel(StatPanel)
+                                if (DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
+                                if (ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
+                                if (SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
                             end
                         },
                     });
                     mainPanel.Armor = gui.registerMainButton({
                         parent = mainPanel,
-                        coords = { x = 0, y = button.height - 10 },
+                        coords = { x = 0, y = STIKConstants.button.height - 10 },
                         image = "armor",
                         highlight = true,
-                        hint = texts.stats.armor,
+                        hint = STIKConstants.texts.stats.armor,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
                             swapPanel = function()
-                                swapPanel(ArmorPanel)
-                                if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
-                                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
-                                if (SettingsPanel:IsVisible()) then swapPanel(SettingsPanel); end;
+                                gui.swapPanel(ArmorPanel)
+                                if (DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
+                                if (StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
+                                if (SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
                             end
                         },
                     });
@@ -669,37 +501,37 @@ function onAddonReady()
                         coords = { x = 0, y = -20 },
                         image = "hp",
                         highlight = false,
-                        hint = texts.stats.hp,
+                        hint = STIKConstants.texts.stats.hp,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
                         },
                     });
                     mainPanel.Shield = gui.registerMainButton({
                         parent = mainPanel,
-                        coords = { x = 0, y = -button.height - 30 },
+                        coords = { x = 0, y = -STIKConstants.button.height - 30 },
                         image = "shield",
                         highlight = false,
-                        hint = texts.stats.shield,
+                        hint = STIKConstants.texts.stats.shield,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
                         },
                     });
                     mainPanel.Settings = gui.registerMainButton({
                         parent = mainPanel,
-                        coords = { x = 0, y = -2 * button.height - 40 },
+                        coords = { x = 0, y = -2 * STIKConstants.button.height - 40 },
                         image = "settings",
                         highlight = true,
-                        hint = texts.settings.title,
+                        hint = STIKConstants.texts.settings.title,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
                             swapPanel = function()
-                                swapPanel(SettingsPanel);
-                                if (DicePanel:IsVisible()) then swapPanel(DicePanel); end;
-                                if (StatPanel:IsVisible()) then swapPanel(StatPanel); end;
-                                if (ArmorPanel:IsVisible()) then swapPanel(ArmorPanel); end;
+                                gui.swapPanel(SettingsPanel);
+                                if (DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
+                                if (StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
+                                if (ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
                             end;
                         },
                     });
@@ -750,11 +582,11 @@ function onAddonReady()
                         coords = { x = 0, y = 0 },
                         image = "settings",
                         highlight = true,
-                        hint = texts.settings.title,
+                        hint = STIKConstants.texts.settings.title,
                         functions = {
-                            showHint = showPanelHint,
-                            hideHint = hidePanelHint,
-                            swapPanel = function() swapPanel(SettingsPanel); end;
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
+                            swapPanel = function() gui.swapPanel(SettingsPanel); end;
                         },
                     });
                 end;
@@ -777,11 +609,11 @@ function onAddonReady()
                 local createAttackableStatus = function(targetFrame)
                     targetFrame.AttackablePanel = CreateFrame("Button", "targetInfoAttackable", targetFrame);
                     targetFrame.AttackablePanel:EnableMouse(); 
-                    targetFrame.AttackablePanel:SetWidth(smallestButton.width);
-                    targetFrame.AttackablePanel:SetHeight(smallestButton.height);
+                    targetFrame.AttackablePanel:SetWidth(STIKConstants.smallestButton.width);
+                    targetFrame.AttackablePanel:SetHeight(STIKConstants.smallestButton.height);
                     targetFrame.AttackablePanel:SetPoint("RIGHT", targetFrame, "RIGHT", 0, 0);
-                    targetFrame.AttackablePanel:SetScript("OnEnter", showPanelHint);
-                    targetFrame.AttackablePanel:SetScript("OnLeave", hidePanelHint);
+                    targetFrame.AttackablePanel:SetScript("OnEnter", gui.showPanelHint);
+                    targetFrame.AttackablePanel:SetScript("OnLeave", gui.hidePanelHint);
                 end;
 
                 local targetFrame = createTargetFrame();
@@ -794,7 +626,7 @@ function onAddonReady()
                 local createStatPanel = function ()
                     local statPanel = gui.createDefaultFrame({
                         parent = mainPanel,
-                        title = texts.stats.stat,
+                        title = STIKConstants.texts.stats.stat,
                         size = { width = 240, height = 260 },
                         aligment = { x = "LEFT", y = "LEFT" },
                         point = { x = 70, y = 0 }
@@ -826,19 +658,19 @@ function onAddonReady()
 
                     statPanel.Level = gui.createLine({
                         parent = statPanel,
-                        content = texts.stats.level..": "..progress.lvl,
+                        content = STIKConstants.texts.stats.level..": "..progress.lvl,
                         coords = { x = lvlMargin, y = - 225 },
                         direction = { x = "LEFT", y = "TOP" }
                     });
                     statPanel.Exp = gui.createLine({
                         parent = statPanel,
-                        content = texts.stats.expr..": "..progress.expr.."/"..neededExpr,
+                        content = STIKConstants.texts.stats.expr..": "..progress.expr.."/"..neededExpr,
                         coords = { x = -90, y = -225 },
                         direction = { x = "LEFT", y = "TOP" }
                     });
                     statPanel.Avl = gui.createLine({
                         parent = statPanel,
-                        content = texts.stats.avaliable..": "..params.points,
+                        content = STIKConstants.texts.stats.avaliable..": "..params.points,
                         coords = { x = -90, y = -205 },
                         direction = { x = "LEFT", y = "TOP" }
                     });
@@ -853,7 +685,7 @@ function onAddonReady()
                 local createDicePanel = function ()
                     local dicePanel = gui.createDefaultFrame({
                         parent = mainPanel,
-                        title = texts.dices,
+                        title = STIKConstants.texts.dices,
                         size = { width = 80, height = 320 },
                         aligment = { x = "LEFT", y = "LEFT" },
                         point = { x = 70, y = 0 }
@@ -892,13 +724,13 @@ function onAddonReady()
 
                 local registerDicesTypes = function (dicePanel)
                     local stats = {
-                        { name = 'str', coords = { x = 0, y = 3 * smallButton.height + 30 }, image = 'sword' },
-                        { name = 'ag', coords = { x = 0, y = 2 * smallButton.height + 20 }, image = 'dagger' },
-                        { name = 'snp', coords = { x = 0, y = smallButton.height + 10 }, image = 'bow' },
+                        { name = 'str', coords = { x = 0, y = 3 * STIKConstants.smallButton.height + 30 }, image = 'sword' },
+                        { name = 'ag', coords = { x = 0, y = 2 * STIKConstants.smallButton.height + 20 }, image = 'dagger' },
+                        { name = 'snp', coords = { x = 0, y = STIKConstants.smallButton.height + 10 }, image = 'bow' },
                         { name = 'mg', coords = { x = 0, y = 0 }, image = 'magic' },
-                        { name = 'body', coords = { x = 0, y = -smallButton.height - 10 }, image = 'strong' },
-                        { name = 'moral', coords = { x = 0, y = -2* smallButton.height - 20 }, image = 'fear' },
-                        { name = 'luck', coords = { x = 0, y = -3 * smallButton.height - 30 }, image = 'luck' },
+                        { name = 'body', coords = { x = 0, y = -STIKConstants.smallButton.height - 10 }, image = 'strong' },
+                        { name = 'moral', coords = { x = 0, y = -2* STIKConstants.smallButton.height - 20 }, image = 'fear' },
+                        { name = 'luck', coords = { x = 0, y = -3 * STIKConstants.smallButton.height - 30 }, image = 'luck' },
                     };
 
                     for index, stat in pairs(stats) do
@@ -906,7 +738,7 @@ function onAddonReady()
                             views = { parent = dicePanel, main = MainPanelSTIK, menu = dicePanel.Menu },
                             coords = stat.coords,
                             image = stat.image,
-                            hint = texts.stats[stat.name],
+                            hint = STIKConstants.texts.stats[stat.name],
                             stat = stat.name,
                         });
                     end
@@ -922,7 +754,7 @@ function onAddonReady()
                 local createArmorPanel = function ()
                     local armorPanel = gui.createDefaultFrame({
                         parent = mainPanel,
-                        title = texts.stats.armor,
+                        title = STIKConstants.texts.stats.armor,
                         size = { width = 180, height = 235 },
                         aligment = { x = "LEFT", y = "LEFT" },
                         point = { x = 70, y = 0 }
@@ -1002,7 +834,7 @@ function onAddonReady()
                 local createSettingsPanel = function()
                     local settingsPanel = gui.createDefaultFrame({
                         parent = mainPanel,
-                        title = texts.settings.title,
+                        title = STIKConstants.texts.settings.title,
                         size = { width = 580, height = 290 },
                         aligment = { x = "LEFT", y = "LEFT" },
                         point = { x = 70, y = 0 }
@@ -1016,11 +848,11 @@ function onAddonReady()
                 local createCheckboxPart = function(settingsPanel)
                     local checkboxTitle = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
                     checkboxTitle:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 20, -56);
-                    checkboxTitle:SetText(texts.settings.parameters);
+                    checkboxTitle:SetText(STIKConstants.texts.settings.parameters);
 
                     settingsPanel.handlePlotInvites = gui.createCheckbox({
                         parent = settingsPanel,
-                        content = texts.settings.getPlotInv,
+                        content = STIKConstants.texts.settings.getPlotInv,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
                             point = { x = 16, y = 76 },
@@ -1039,7 +871,7 @@ function onAddonReady()
 
                     settingsPanel.handleEventInvites = gui.createCheckbox({
                         parent = settingsPanel,
-                        content = texts.settings.getEventInv,
+                        content = STIKConstants.texts.settings.getEventInv,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
                             point = { x = 16, y = 114 },
@@ -1058,7 +890,7 @@ function onAddonReady()
 
                     settingsPanel.showRollInfo = gui.createCheckbox({
                         parent = settingsPanel,
-                        content = texts.settings.showRollInfo,
+                        content = STIKConstants.texts.settings.showRollInfo,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
                             point = { x = 16, y = 154 },
@@ -1077,7 +909,7 @@ function onAddonReady()
 
                     settingsPanel.showDeclineMessages = gui.createCheckbox({
                         parent = settingsPanel,
-                        content = texts.settings.showDeclineMessages,
+                        content = STIKConstants.texts.settings.showDeclineMessages,
                         wrapper = {
                             aligment = { x = "TOPLEFT", y = "TOPLEFT" },
                             point = { x = 16, y = 194 },
@@ -1100,9 +932,9 @@ function onAddonReady()
                         settingsPanel.Title = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
                         settingsPanel.Title:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 290, -56);
                         if (playerInfo.settings.isEventStarted) then
-                            settingsPanel.Title:SetText(texts.settings.activeEventTitle);
+                            settingsPanel.Title:SetText(STIKConstants.texts.settings.activeEventTitle);
                         else
-                            settingsPanel.Title:SetText(texts.settings.parts);
+                            settingsPanel.Title:SetText(STIKConstants.texts.settings.parts);
                         end;
                     end;
 
@@ -1183,7 +1015,7 @@ function onAddonReady()
                     if (settingsPanel.SinglePlot) then settingsPanel.SinglePlot:Hide();  end;
                     settingsPanel.SinglePlot = gui.createDefaultFrame({
                         parent = settingsPanel,
-                        title = texts.settings.plot,
+                        title = STIKConstants.texts.settings.plot,
                         size = { width = 290, height = 290 },
                         aligment = { x = "LEFT", y = "LEFT" },
                         point = { x = 570, y = 0 }
@@ -1220,7 +1052,7 @@ function onAddonReady()
                             direction = { x = "BOTTOMRIGHT", y = "BOTTOMRIGHT" },
                             coords = { x = -24, y = 24 },
                             size = { width = 204, height = 32 },
-                            content = texts.settings.unactivateButton,
+                            content = STIKConstants.texts.settings.unactivateButton,
                         });
 
                         settingsPanel.SinglePlot.UnactivateButton:SetScript("OnClick", function()
@@ -1241,7 +1073,7 @@ function onAddonReady()
                             direction = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
                             coords = { x = 24, y = 24 },
                             size = { width = 96, height = 32 },
-                            content = texts.settings.removePlot,
+                            content = STIKConstants.texts.settings.removePlot,
                         });
     
                         settingsPanel.SinglePlot.DeleteButton:SetScript("OnClick", function()
@@ -1253,8 +1085,8 @@ function onAddonReady()
                         end);
     
                         local selectBtnContent = nil;
-                        if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = texts.settings.unselectPlot;
-                        else selectBtnContent = texts.settings.selectPlot;
+                        if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = STIKConstants.texts.settings.unselectPlot;
+                        else selectBtnContent = STIKConstants.texts.settings.selectPlot;
                         end;
     
                         settingsPanel.SinglePlot.SelectButton = gui.createDefaultButton({
@@ -1302,8 +1134,8 @@ function onAddonReady()
     local preloadChecks = function(context)
         if (context == nil) then return 'NO_PLOT_SELECTED' end;
 
-        if (not(IsHashOK(context))) then
-            message(texts.err.hashIsWrong);
+        if (not(STIKSharedFunctions.isHashOK(context))) then
+            message(STIKConstants.texts.err.hashIsWrong);
             context = {
                 hash = 2034843419,
                 stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
@@ -1313,8 +1145,8 @@ function onAddonReady()
                 params = { shield = 0, points = 100, health = 3 },
             }
 
-            context.params.points = calculatePoints(context.stats, context.progress);
-            context.params.health = calculateHealth(context.stats);
+            context.params.points = STIKSharedFunctions.calculatePoints(context.stats, context.progress);
+            context.params.health = STIKSharedFunctions.calculateHealth(context.stats);
             playerInfo[playerInfo.settings.currentPlot] = context;
         end;
 
@@ -1332,7 +1164,7 @@ function onAddonReady()
         },
     };
 
-    currentContext = getPlayerContext(playerInfo);
+    currentContext = STIKSharedFunctions.getPlayerContext(playerInfo);
     local addonStatus = preloadChecks(currentContext);
     local generator = viewGenerator(currentContext);
 
@@ -1389,21 +1221,21 @@ function onDMSaySomething(prefix, msg, tp, sender)
             plot.stats.mg = 0;
             plot.stats.body = 0;
             plot.stats.moral = 0;
-            plot.params.points = calculatePoints(plot.stats, plot.progress);
+            plot.params.points = STIKSharedFunctions.calculatePoints(plot.stats, plot.progress);
             print("СИСТЕМА: Очки талантов сброшены!");
         end,
         updateStats = function (plot)
-            StatPanel.stat_str:SetText(texts.stats.str..": "..plot.stats.str);
-            StatPanel.stat_ag:SetText(texts.stats.ag..": "..plot.stats.ag);
-            StatPanel.stat_snp:SetText(texts.stats.snp..": "..plot.stats.snp);
-            StatPanel.stat_mg:SetText(texts.stats.mg..": "..plot.stats.mg);
-            StatPanel.stat_body:SetText(texts.stats.body..": "..plot.stats.body);
-            StatPanel.stat_moral:SetText(texts.stats.moral..": "..plot.stats.moral);
-            StatPanel.Level:SetText(texts.stats.level..": "..plot.progress.lvl);
-            StatPanel.Exp:SetText(texts.stats.expr..": "..plot.progress.expr.."/"..plot.progress.lvl * 1000);
-            StatPanel.Avl:SetText(texts.stats.avaliable..": "..calculatePoints(plot.stats, plot.progress));
+            StatPanel.stat_str:SetText(STIKConstants.texts.stats.str..": "..plot.stats.str);
+            StatPanel.stat_ag:SetText(STIKConstants.texts.stats.ag..": "..plot.stats.ag);
+            StatPanel.stat_snp:SetText(STIKConstants.texts.stats.snp..": "..plot.stats.snp);
+            StatPanel.stat_mg:SetText(STIKConstants.texts.stats.mg..": "..plot.stats.mg);
+            StatPanel.stat_body:SetText(STIKConstants.texts.stats.body..": "..plot.stats.body);
+            StatPanel.stat_moral:SetText(STIKConstants.texts.stats.moral..": "..plot.stats.moral);
+            StatPanel.Level:SetText(STIKConstants.texts.stats.level..": "..plot.progress.lvl);
+            StatPanel.Exp:SetText(STIKConstants.texts.stats.expr..": "..plot.progress.expr.."/"..plot.progress.lvl * 1000);
+            StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..STIKSharedFunctions.calculatePoints(plot.stats, plot.progress));
 
-            plot.params.health = calculateHealth(plot.stats);
+            plot.params.health = STIKSharedFunctions.calculateHealth(plot.stats);
             MainPanelSTIK.HP.Text:SetText(plot.params.health);
         end,
         getMaxHP = function(plot)
@@ -1424,7 +1256,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 if (progress.expr >= progress.lvl * 1000) then
                     progress.lvl = progress.lvl + 1;
                     progress.expr = progress.expr - ((progress.lvl - 1) * 1000);
-                    params.points = calculatePoints(currentPlot.stats, currentPlot.progress);
+                    params.points = STIKSharedFunctions.calculatePoints(currentPlot.stats, currentPlot.progress);
                     print("СИСТЕМА: Ваш уровень был повышен!");
                 end;
             else
@@ -1449,7 +1281,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             local stats = currentPlot.stats;
             local shouldClearParams = level < progress.lvl;
             progress.lvl = level;
-            params.points = calculatePoints(stats, progress);
+            params.points = STIKSharedFunctions.calculatePoints(stats, progress);
             print('СИСТЕМА: Уровень установлен на '..progress.lvl);
             progress.expr = 0;
             if shouldClearParams then commandHelpers.clearTalantes(currentPlot) end;
@@ -1488,7 +1320,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             else
                 print ('Вам пытались выдать ' ..math.abs(health).. ' ХП, но ваше максимальное значение - ' ..commandHelpers.getMaxHP(currentPlot));
                 print ('Значение здоровья было установлено в макс., лишние ХП - уничтожены');
-                params.health = calculateHealth(stats);
+                params.health = STIKSharedFunctions.calculateHealth(stats);
             end;
             MainPanelSTIK.HP.Text:SetText(params.health);
         end,
@@ -1507,7 +1339,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             local params = currentPlot.params;
             local stats = currentPlot.stats;
 
-            params.health = calculateHealth(stats);
+            params.health = STIKSharedFunctions.calculateHealth(stats);
             print('Ваши ХП были восстановлены');
             MainPanelSTIK.HP.Text:SetText(params.health);
         end,
@@ -1642,8 +1474,8 @@ function onDMSaySomething(prefix, msg, tp, sender)
                         playerInfo[meta].progress = { expr = 0, lvl = 1 };
                         playerInfo[meta].params = {
                             shield = 0,
-                            points = calculatePoints(playerInfo[meta].stats, playerInfo[meta].progress),
-                            health = calculateHealth(playerInfo[meta].stats)
+                            points = STIKSharedFunctions.calculatePoints(playerInfo[meta].stats, playerInfo[meta].progress),
+                            health = STIKSharedFunctions.calculateHealth(playerInfo[meta].stats)
                         };
                         playerInfo[meta].armor = { legs = "nothing", body = "nothing", head = "nothing" };
                         playerInfo[meta].flags = { isInBattle = 0 };
@@ -1735,7 +1567,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     SettingsPanel.RefreshPlotList();
 
                     if (tonumber(shouldResHP) == 1) then
-                        playerInfo[index].params.health = calculateHealth(playerInfo[index].stats);
+                        playerInfo[index].params.health = STIKSharedFunctions.calculateHealth(playerInfo[index].stats);
                         print('ОЗ были восстановлены по решению ведущего');
                     end;
 
@@ -1744,7 +1576,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                         print('Барьеры были сброшены по решению ведущего');
                     end;
 
-                    playerInfo[index].hash = STIKStatHash(playerInfo[index]);
+                    playerInfo[index].hash = STIKSharedFunctions.statHash(playerInfo[index]);
         
                     if (MainPanelSTIK) then MainPanelSTIK:Hide(); end;
                     if (targetInfoFrame) then targetInfoFrame:Hide(); end;
@@ -1788,88 +1620,5 @@ function onDMSaySomething(prefix, msg, tp, sender)
     };
 
     commandConnector[COMMAND](VALUE);
-    if (currentPlot) then currentPlot.hash = STIKStatHash(currentPlot); end;
+    if (currentPlot) then currentPlot.hash = STIKSharedFunctions.statHash(currentPlot); end;
 end;
-
-function acceptEventInvite()
-    if (SHOULD_ACCEPT_NEXT_INVITE) then
-        AcceptGroup();
-    end;
-end;
-
-function sendRaidRequest()
-    if (SHOULD_ACCEPT_NEXT_INVITE) then
-        StaticPopup_Hide("PARTY_INVITE");
-        SendAddonMessage("STIK_PLAYER_ANSWER", "maybe_raid", "WHISPER", MASTER);
-        MASTER = nil;
-        SHOULD_ACCEPT_NEXT_INVITE = false;
-    end;
-end;
-
-function showTargetInfo(selectionType)
-    if (not(playerInfo.settings.isEventStarted)) then
-        return nil;
-    end;
-
-    local currentPlot = playerInfo.settings.currentPlot;
-    if (not(playerInfo[currentPlot])) then
-        return nil;
-    end;
-
-    local flags = playerInfo[currentPlot].flags;
-
-    local targetName = UnitName("target");
-    local isTargetExists = not (targetName == nil)
-    local isTargetPlayer = UnitPlayerControlled("target")
-
-    if (isTargetExists and not isTargetPlayer) then
-        local canBeAttackedMelee = CheckInteractDistance("target", 3);
-        if (canBeAttackedMelee) then
-            targetInfoFrame.AttackablePanel:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_ok.blp");
-            targetInfoFrame.AttackablePanel:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_ok.blp");
-            targetInfoFrame.AttackablePanel.hint = texts.canBeAttacked.ok;
-        else
-            targetInfoFrame.AttackablePanel:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_not.blp");
-            targetInfoFrame.AttackablePanel:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\canBeAttacked_not.blp");
-            targetInfoFrame.AttackablePanel.hint = texts.canBeAttacked.notOK;
-        end
-    
-        if (flags.isInBattle == 1) then targetInfoFrame:Show();
-        else targetInfoFrame:Hide();
-        end;
-    else targetInfoFrame:Hide();
-    end
-end
-
-function STIKMiniMapButton_OnClick()
-    if MainPanelSTIK:IsVisible() then MainPanelSTIK:Hide();
-    else MainPanelSTIK:Show();
-    end
-end
-
-STIKMiniMapButtonPosition = {
-	locationAngle = -45,
-	x = 52-(80*cos(-45)),
-	y = ((80*sin(-45))-52)
-}
-
-function STIKMiniMapButton_Reposition()
-	STIKMiniMapButtonPosition.x = 52-(80*cos(STIKMiniMapButtonPosition.locationAngle))
-	STIKMiniMapButtonPosition.y = ((80*sin(STIKMiniMapButtonPosition.locationAngle))-52)
-	STIKMiniMapButton:SetPoint("TOPLEFT","Minimap","TOPLEFT",STIKMiniMapButtonPosition.x,STIKMiniMapButtonPosition.y)
-end
-
-function STIKMiniMapButtonPosition_LoadFromDefaults()
-	STIKMiniMapButton:SetPoint("TOPLEFT","Minimap","TOPLEFT",STIKMiniMapButtonPosition.x,STIKMiniMapButtonPosition.y)
-end
-
-function STIK_Minimap_Update()
-	local xpos,ypos = GetCursorPosition()
-	local xmin,ymin = Minimap:GetLeft(), Minimap:GetBottom()
-
-	xpos = xmin-xpos/UIParent:GetScale()+70 
-	ypos = ypos/UIParent:GetScale()-ymin-70
-
-	STIKMiniMapButtonPosition.locationAngle = math.deg(math.atan2(ypos,xpos))
-	STIKMiniMapButton_Reposition()
-end

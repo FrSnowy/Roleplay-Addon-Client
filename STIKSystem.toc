@@ -5,3 +5,11 @@
 ## SavedVariablesPerCharacter: playerInfo
 SS.xml
 SSMiniMapButton.xml
+STIKConstants.lua
+STIKSharedFunctions.lua
+STIKMiniMap.lua 
+STIKAcceptEventInvite.lua
+STIKSendRaidRequest.lua
+STIKShowTargetInfo.lua
+HashString.lua
+SortTable.lua
