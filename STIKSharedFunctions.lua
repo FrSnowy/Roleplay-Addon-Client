@@ -36,4 +36,36 @@ STIKSharedFunctions = {
         local hashOfCtx = playerContext.hash;
         return tonumber(hashofStats) == tonumber(hashOfCtx);
     end,
+    modifyStat = function (job, stat, playerContext)
+        local flags = playerContext.flags;
+        local progress = playerContext.progress;
+        local params = playerContext.params;
+
+        local isInBattle = not(flags.isInBattle == 0);
+        
+        if (isInBattle) then
+            print(STIKConstants.texts.err.battle);
+            return stat;
+        end;
+
+        local prevStatValue = stat;
+        local jobConnector = {
+            [STIKConstants.texts.jobs.add] = function()
+                if (stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then return stat + 1;
+                else return stat; end;
+            end,
+            [STIKConstants.texts.jobs.remove] = function()
+                if (stat > 0) then return stat - 1;
+                else return 0; end;
+            end,
+            [STIKConstants.texts.jobs.clear] = function()
+                return 0;
+            end,
+        };
+
+        stat = jobConnector[job]();
+        params.points = params.points - (stat - prevStatValue);
+        StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..params.points);
+        return stat;
+    end,
 };

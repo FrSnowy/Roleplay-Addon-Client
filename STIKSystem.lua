@@ -1,410 +1,5 @@
 function onAddonReady()
-    --- Функции, которые работают с гуем без контекста ---
-    gui = {
-        showPanelHint = function(self)
-            if (self.hint) then
-                GameTooltip:SetOwner(self,"ANCHOR_TOP");
-                GameTooltip:AddLine(self.hint);
-                GameTooltip:Show();
-            end
-        end,
-        hidePanelHint = function(self)
-            if GameTooltip:IsOwned(self) then
-                GameTooltip:Hide();
-            end
-        end,
-        swapPanel = function(panel)
-            if panel:IsVisible() then
-                panel:Hide();
-            else
-                panel:Show();
-            end
-        end,
-        createLine = function (settings)
-            local panel = settings.parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
-                panel:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
-                panel:SetText(settings.content);
-                panel:SetAlpha(0.85);
-                panel:Show();
-    
-            return panel;
-        end,
-        createDefaultButton = function(settings)
-            local function defaultButtonSettings(view)
-                view:SetPoint(settings.direction.x, settings.parent, settings.direction.y, settings.coords.x, settings.coords.y);
-                view:SetHeight((settings.size and settings.size.height) or 16);
-                view:SetWidth((settings.size and settings.size.width) or 14);
-                view:SetText(settings.content);
-                view:RegisterForClicks("AnyUp");
-            end
-    
-            local button = CreateFrame("Button", "defaultButton", settings.parent, "UIPanelButtonTemplate");
-            defaultButtonSettings(button);
-            return button;
-        end,
-        registerMainButton = function (settings)
-            local function setButtonView(view)
-                view:SetSize(STIKConstants.button.width, STIKConstants.button.height);
-                view:SetPoint("CENTER", settings.parent, "CENTER", settings.coords.x, settings.coords.y);
-                view:RegisterForClicks("AnyUp");
-                view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-                if (settings.highlight) then
-                    view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-                end
-                view:Show()
-            end
-    
-            local function setButtonScripts(view)
-                view:SetScript("OnEnter", settings.functions.showHint);
-                view:SetScript("OnLeave", settings.functions.hideHint);
-                view:SetScript("OnClick", settings.functions.swapPanel);
-            end
-    
-            local button = CreateFrame("Button", "MainPanelButton", settings.parent, "SecureHandlerClickTemplate");
-            button.hint = settings.hint;
-            setButtonView(button);
-            setButtonScripts(button);
-    
-            return button;
-        end,
-        registerDice = function (settings)
-            local function setDiceView(view)
-                view:SetSize(STIKConstants.smallButton.width, STIKConstants.smallButton.height);
-                view:SetPoint("CENTER", settings.views.parent, "CENTER", settings.coords.x, -10 + settings.coords.y);
-                view:RegisterForClicks("AnyUp");
-                view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-                view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
-                view:Show()
-            end
-
-            local function setDiceScripts(view)
-                view:SetScript("OnEnter", gui.showPanelHint);
-                view:SetScript("OnLeave", gui.hidePanelHint);
-                view:SetScript("OnClick",
-                    function()
-                        local prevStat = settings.views.menu.stat;
-                        settings.views.menu.stat = view.stat;
-    
-                        if ((prevStat == settings.views.menu.stat) and (settings.views.menu:IsVisible())) then 
-                            settings.views.menu:Hide();
-                        else
-                            settings.views.menu:SetPoint("LEFT", settings.views.main, "LEFT", 130, -10 + settings.coords.y);
-                            settings.views.menu:Show();
-                        end
-                    end
-                );
-            end
-    
-            local rollButton = CreateFrame("Button", "diceButton", settings.views.parent, "SecureHandlerClickTemplate")
-            rollButton.hint = settings.hint;
-            rollButton.stat = settings.stat;
-            setDiceView(rollButton);
-            setDiceScripts(rollButton);
-    
-            return rollButton;
-        end,
-        createDefaultFrame = function (settings)
-            local defFrame = CreateFrame("Frame", "defaultFrame", settings.parent);
-            defFrame:EnableMouse();
-            defFrame:SetWidth(settings.size.width);
-            defFrame:SetHeight(settings.size.height);
-            defFrame:SetToplevel(true);
-            defFrame:SetBackdropColor(0, 0, 0, 1);
-            defFrame:SetFrameStrata("FULLSCREEN_DIALOG");
-            defFrame:SetPoint(settings.aligment.x, settings.parent, settings.aligment.y, settings.point.x, settings.point.y);
-            defFrame:SetBackdrop({
-                bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-                edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-                tile = true, tileSize = 32, edgeSize = 32,
-                insets = { left = 12, right = 12, top = 12, bottom = 12 },
-            });
-
-            if (not(settings.title == nil)) then
-                local defFrameTitle = gui.createLine({
-                    parent = defFrame,
-                    content = settings.title,
-                    coords = { x = 0, y = - 25 },
-                    direction = { x = "CENTER", y = "TOP" }
-                });
-            end;
-
-            return defFrame;
-        end,
-        createCheckbox = function (settings)
-            local checkBoxFrame = CreateFrame("Frame", "cb-frame", settings.parent);
-            checkBoxFrame:EnableMouse();
-            checkBoxFrame:SetWidth(settings.wrapper.size.width);
-            checkBoxFrame:SetHeight(settings.wrapper.size.height);
-            checkBoxFrame:SetPoint(settings.wrapper.aligment.x, settings.parent, settings.wrapper.aligment.y, settings.wrapper.point.x, -settings.wrapper.point.y);
-            checkBoxFrame:SetToplevel(true);
-            checkBoxFrame:SetBackdropColor(0, 0, 0, 1);
-            checkBoxFrame:SetFrameStrata("FULLSCREEN_DIALOG");
-
-            checkBoxFrame.Checkbox = CreateFrame("CheckButton", "checkbox", checkBoxFrame, "ChatConfigCheckButtonTemplate");
-            checkBoxFrame.Checkbox:SetPoint(settings.checkbox.aligment.x, checkBoxFrame, settings.checkbox.aligment.y, settings.checkbox.point.x, settings.checkbox.point.y);
-            checkBoxFrame.Checkbox:SetWidth(settings.checkbox.size.width);
-            checkBoxFrame.Checkbox:SetHeight(settings.checkbox.size.height);
-            
-            checkBoxFrame.Content = checkBoxFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
-            checkBoxFrame.Content:SetPoint("LEFT", checkBoxFrame.Checkbox, "LEFT", 36, 0);
-            checkBoxFrame.Content:SetText(settings.content);
-
-            return checkBoxFrame;
-        end,
-        createPlotView = function (settings)
-            local plotView = CreateFrame("Button", "AddPlotPanel", settings.parent);
-            plotView:EnableMouse();
-            plotView:SetWidth(settings.size.width);
-            plotView:SetHeight(settings.size.height);
-            plotView:SetToplevel(true);
-            plotView:SetBackdropColor(0, 0, 0, 1);
-            plotView:SetFrameStrata("FULLSCREEN_DIALOG");
-            plotView:SetPoint("TOPLEFT", settings.parent, "TOPLEFT", settings.point.x, -settings.point.y);
-            plotView:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\plot-background.blp");
-            plotView:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\plot-background.blp");
-
-            plotView.Text = plotView:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
-            plotView.Text:SetPoint("LEFT", plotView, "LEFT", 16, 0);
-            if (settings.id == playerInfo.settings.currentPlot) then
-                plotView.Text:SetTextColor(0.901, 0.494, 0.133, 1);
-            end;
-            plotView.Text:SetText(settings.text);
-            plotView:SetScript("OnClick", settings.clickHandler);
-
-            return plotView;
-        end,
-    }
-    --- Функции, которые работают с контекстом ---
-    helpers = {
-        modifyStat = function (job, stat, playerContext)
-            local flags = playerContext.flags;
-            local progress = playerContext.progress;
-            local params = playerContext.params;
-
-            local isInBattle = not(flags.isInBattle == 0);
-            
-            if (isInBattle) then
-                print(STIKConstants.texts.err.battle);
-                return stat;
-            end;
-
-            local prevStatValue = stat;
-            local jobConnector = {
-                [STIKConstants.texts.jobs.add] = function()
-                    if (stat < 40 + 5 * (progress.lvl - 1) and params.points > 0) then return stat + 1;
-                    else return stat; end;
-                end,
-                [STIKConstants.texts.jobs.remove] = function()
-                    if (stat > 0) then return stat - 1;
-                    else return 0; end;
-                end,
-                [STIKConstants.texts.jobs.clear] = function()
-                    return 0;
-                end,
-            };
-
-            stat = jobConnector[job]();
-            params.points = params.points - (stat - prevStatValue);
-            StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..params.points);
-            return stat;
-        end,
-        registerStat = function (settings, playerContext)
-            local stats = playerContext.stats;
-            local panel = gui.createLine({
-                parent = settings.parent,
-                content = STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat],
-                coords = settings.coords,
-                direction = { x = "LEFT", y = "TOP" }
-            });
-    
-            local AddButton = gui.createDefaultButton({
-                parent = settings.parent, content = "+",
-                coords = { x = 45, y = settings.coords.y },
-                direction = { x = "LEFT", y = "TOP" }
-            });
-    
-            AddButton:SetScript("OnClick",
-                function()
-                    stats[settings.stat] = helpers.modifyStat(STIKConstants.texts.jobs.add, stats[settings.stat], playerContext);
-                    panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
-                    playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
-                    MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
-                    playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
-                end
-            );
-    
-            local RemoveButton = gui.createDefaultButton({
-                parent = settings.parent, content = "-",
-                coords = { x = 65, y = settings.coords.y },
-                direction = { x = "LEFT", y = "TOP" }
-            });
-            
-            RemoveButton:SetScript("OnClick",
-                function()
-                    stats[settings.stat] = helpers.modifyStat(STIKConstants.texts.jobs.remove, stats[settings.stat], playerContext);
-                    panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
-                    playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
-                    MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
-                    playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
-                end
-            );
-            
-            local ClearButton = gui.createDefaultButton({
-                parent = settings.parent, content = "0",
-                coords = { x = 85, y = settings.coords.y },
-                direction = { x = "LEFT", y = "TOP" }
-            });
-        
-            ClearButton:SetScript("OnClick",
-                function()
-                    stats[settings.stat] = helpers.modifyStat(STIKConstants.texts.jobs.clear, stats[settings.stat], playerContext);
-                    panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
-                    playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
-                    MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
-                    playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
-                end
-            );
-    
-            return panel;
-        end,
-        registerRoll = function (settings, playerContext)
-            local params = playerContext.params;
-            local stats = playerContext.stats;
-            local armor = playerContext.armor;
-
-            local menu = settings.parent;
-
-            local function setRollView(view)
-                view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
-                view:SetHeight(23);
-                view:SetWidth(50);
-                view:SetText("d"..settings.dice.size);
-                view:RegisterForClicks("AnyUp");
-            end
-
-            local function setRollScript(view)
-                view:SetScript("OnClick",
-                    function()
-                        local usingStat = menu.stat;
-                        local diceSize = settings.dice.size;
-                        if (usingStat == 'luck') then return RandomRoll(0, diceSize); end;
-
-                        local penaltyOfDice = settings.dice.penalty;
-                        local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
-                        if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
-    
-                        local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
-    
-                        local penaltyByArmor = {
-                            head = -STIKConstants.armorPenalty.head[armor.head][usingStat],
-                            body = -STIKConstants.armorPenalty.body[armor.body][usingStat],
-                            legs = -STIKConstants.armorPenalty.legs[armor.legs][usingStat],
-                        };
-    
-                        local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
-                        local penaltyOfArmor = penaltyByArmor.head + penaltyByArmor.body + penaltyByArmor.legs;
-    
-                        local minRoll = rollWithoutArmor - math.ceil(rollWithoutArmor * penaltyOfArmor);
-                        local maxRoll = diceSize + rollWithoutArmor;
-                        maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
-    
-                        if (maxRoll == 0) then maxRoll = 1; end;
-                        if (playerInfo.settings.showRollInfo) then
-                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
-                            print('Приведенный навык: '..math.ceil((diceSize * stats[usingStat])/100));
-                            print('Модификатор от размера куба: '..string.sub(1 / penaltyOfDice, 0, 5));
-                            print('Модификатор от ОЗ: '..modiferOfHealth);
-                            print('Бросок модифицированного навыка (без учета брони): '..rollWithoutArmor);
-                            print('Дополнительный модификатор от брони: '..penaltyOfArmor);
-                            print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
-                            print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
-                        else
-                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
-                        end;
-
-                        if (playerInfo.settings.isEventStarted) then
-                            SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..STIKConstants.texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
-                        end;
-                        RandomRoll(minRoll, maxRoll);
-                    end
-                );
-            end
-
-            local button = CreateFrame("Button", "rollButton", menu, "UIPanelButtonTemplate");
-            setRollView(button);
-            setRollScript(button);
-        end,
-        registerArmor = function (settings, playerContext)
-            local armor = playerContext.armor;
-            local armorLine = gui.createLine({
-                parent = settings.views.parent,
-                content = STIKConstants.texts.armor[settings.slot]..": "..STIKConstants.texts.armorTypes[armor[settings.slot]],
-                coords = settings.line.coords,
-                direction = settings.line.direction,
-            });
-    
-            local armorButton = gui.createDefaultButton({
-                parent = settings.views.parent,
-                content = ">",
-                coords = settings.button.coords,
-                direction = settings.button.direction,
-            });
-            armorButton:SetScript("OnClick",
-                function()
-                    local prevSlot = settings.views.armorMenu.slot;
-                    settings.views.armorMenu.slot = settings.slot;
-                    settings.views.armorMenu.connectedWith = armorLine;
-    
-                    if ((prevSlot == settings.views.armorMenu.slot) and (settings.views.armorMenu:IsVisible())) then 
-                        settings.views.armorMenu:Hide();
-                    else
-                        settings.views.armorMenu:SetPoint("LEFT", settings.views.parent, "TOP", 70, settings.line.coords.y);
-                        settings.views.armorMenu:Show();
-                    end
-                end
-            );
-    
-            armorLine.button = armorButton;
-            return armorLine;
-        end,
-        registerArmorType = function (settings, playerContext)
-            local armor = playerContext.armor;
-            local function setArmorTypeView(view)
-                view:SetPoint("TOP", settings.parent, "LEFT", settings.coords.x, settings.coords.y);
-                view:SetHeight(23);
-                view:SetWidth(70);
-                view:SetText(STIKConstants.texts.armorTypes[settings.armorType]);
-                view:RegisterForClicks("AnyUp");
-            end
-    
-            local function setArmorTypeScript(view)
-                view:SetScript("OnClick",
-                    function()
-                        
-                        local currentPlot = playerInfo.settings.currentPlot;
-                        local flags = playerInfo[currentPlot].flags;
-
-                        if (flags.isInBattle == 1) then
-                            print('Нельзя менять броню в бою');
-                            return nil;
-                        else
-                            local slot = settings.parent.slot;
-                            armor[slot] = settings.armorType;
-                            settings.parent.connectedWith:SetText(STIKConstants.texts.armor[slot]..": "..STIKConstants.texts.armorTypes[armor[slot]]);
-                            playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
-                            settings.parent:Hide();
-                        end;
-                    end
-                )
-            end
-    
-            local button = CreateFrame("Button", "rollButton", settings.parent, "UIPanelButtonTemplate");
-            setArmorTypeView(button);
-            setArmorTypeScript(button);
-    
-            return button;
-        end
-    };
+    gui = SnowGUI();
 
     --- Генератор вьюшек ---
     local viewGenerator = function (playerContext)
@@ -446,7 +41,7 @@ function onAddonReady()
                     end);
                 end;
                 local createButtons = function(mainPanel)
-                    mainPanel.Roll = gui.registerMainButton({
+                    mainPanel.Roll = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = 3 * STIKConstants.button.height + 10 },
                         image = "dice_pve", highlight = true,
@@ -462,7 +57,7 @@ function onAddonReady()
                             end
                         },
                     });
-                    mainPanel.Stat = gui.registerMainButton({
+                    mainPanel.Stat = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = 2 * STIKConstants.button.height },
                         image = "stat",
@@ -479,7 +74,7 @@ function onAddonReady()
                             end
                         },
                     });
-                    mainPanel.Armor = gui.registerMainButton({
+                    mainPanel.Armor = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = STIKConstants.button.height - 10 },
                         image = "armor",
@@ -496,7 +91,7 @@ function onAddonReady()
                             end
                         },
                     });
-                    mainPanel.HP = gui.registerMainButton({
+                    mainPanel.HP = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = -20 },
                         image = "hp",
@@ -507,7 +102,7 @@ function onAddonReady()
                             hideHint = gui.hidePanelHint,
                         },
                     });
-                    mainPanel.Shield = gui.registerMainButton({
+                    mainPanel.Shield = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = -STIKConstants.button.height - 30 },
                         image = "shield",
@@ -518,7 +113,7 @@ function onAddonReady()
                             hideHint = gui.hidePanelHint,
                         },
                     });
-                    mainPanel.Settings = gui.registerMainButton({
+                    mainPanel.Settings = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = -2 * STIKConstants.button.height - 40 },
                         image = "settings",
@@ -577,7 +172,7 @@ function onAddonReady()
                 end;
 
                 local createButtons = function(mainPanel)
-                    mainPanel.Settings = gui.registerMainButton({
+                    mainPanel.Settings = STIKRegister.mainButton({
                         parent = mainPanel,
                         coords = { x = 0, y = 0 },
                         image = "settings",
@@ -646,7 +241,7 @@ function onAddonReady()
                     };
                 
                     for index, stat in pairs(statsToPanel) do
-                        statPanel["stat_"..stat.name] = helpers.registerStat({
+                        statPanel["stat_"..stat.name] = STIKRegister.stat({
                             parent = statPanel, stat = stat.name, coords = stat.coords
                         }, playerContext);
                     end;
@@ -714,7 +309,7 @@ function onAddonReady()
                     };
 
                     for index, dice in pairs(dices) do
-                        helpers.registerRoll({
+                        STIKRegister.roll({
                             parent = dicePanel.Menu,
                             coords = dice.coords,
                             dice = dice.info,
@@ -734,7 +329,7 @@ function onAddonReady()
                     };
 
                     for index, stat in pairs(stats) do
-                        gui.registerDice({
+                        STIKRegister.dice({
                             views = { parent = dicePanel, main = MainPanelSTIK, menu = dicePanel.Menu },
                             coords = stat.coords,
                             image = stat.image,
@@ -786,7 +381,7 @@ function onAddonReady()
                     };
 
                     for index, armor in pairs(armors) do
-                        helpers.registerArmorType({
+                        STIKRegister.armorType({
                             parent = armorPanel.Menu,
                             armorType = armor.class,
                             coords = armor.coords,
@@ -814,7 +409,7 @@ function onAddonReady()
                     }
 
                     for index, _slot in pairs(slots) do
-                        helpers.registerArmor({
+                        STIKRegister.armor({
                             views = { parent = armorPanel, armorMenu = armorPanel.Menu },
                             slot = _slot.name,
                             line = _slot.line,

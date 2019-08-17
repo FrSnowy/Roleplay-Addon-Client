@@ -7,6 +7,8 @@ SS.xml
 SSMiniMapButton.xml
 STIKConstants.lua
 STIKSharedFunctions.lua
+STIKRegister.lua
+SnowGUI.lua
 STIKMiniMap.lua 
 STIKAcceptEventInvite.lua
 STIKSendRaidRequest.lua
