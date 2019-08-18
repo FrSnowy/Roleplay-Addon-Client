@@ -38,13 +38,6 @@ STIKConstants = {
         dices = "Кубы",
         settings = {
             title = "Настройки",
-            parts = "Сохраненные сюжеты",
-            plot = "Сюжет",
-            removePlot = "Удалить",
-            selectPlot = "Активировать",
-            unselectPlot = "Деактивировать",
-            activeEventTitle = "Активный сюжет",
-            unactivateButton = "Покинуть текущее событие"
         },
         err = {
             battle = "Нельзя изменить значение характеристики в процессе боя",
@@ -217,6 +210,21 @@ STIKConstants = {
                     content = "Показывать уведомления об отказе",
                 },
             },
+        },
+        plots = {
+            title = {
+                active = "Активный сюжет",
+                passive = "Сохраненные сюжеты",
+            },
+        },
+        plot = {
+            title = "Сюжет",
+            buttons = {
+                leave = "Покинуть текущее событие",
+                remove = "Удалить",
+                activate = "Активировать",
+                unselect = "Деактивировать",
+            }
         },
     },
 };

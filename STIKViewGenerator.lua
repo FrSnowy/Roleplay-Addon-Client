@@ -350,13 +350,14 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
         end;
 
         local createPlotsPart = function(settingsPanel)
+            local plotsInfo = STIKConstants.settingsPanelElements.plots;
             if (not(settingsPanel.Title)) then
                 settingsPanel.Title = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
                 settingsPanel.Title:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 290, -56);
                 if (playerInfo.settings.isEventStarted) then
-                    settingsPanel.Title:SetText(STIKConstants.texts.settings.activeEventTitle);
+                    settingsPanel.Title:SetText(plotsInfo.title.active);
                 else
-                    settingsPanel.Title:SetText(STIKConstants.texts.settings.parts);
+                    settingsPanel.Title:SetText(plotsInfo.title.passive);
                 end;
             end;
 
@@ -429,11 +430,13 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
         end;
 
         settingsPanel.createSinglePlot = function(plotID)
+            local plotInfo = STIKConstants.settingsPanelElements.plot;
             local currentPlot = playerInfo.savedPlots[plotID];
-            if (settingsPanel.SinglePlot) then settingsPanel.SinglePlot:Hide();  end;
+            if (settingsPanel.SinglePlot) then settingsPanel.SinglePlot:Hide(); end;
+
             settingsPanel.SinglePlot = gui.createDefaultFrame({
                 parent = settingsPanel,
-                title = STIKConstants.texts.settings.plot,
+                title = plotInfo.title,
                 size = { width = 290, height = 290 },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 570, y = 0 }
@@ -470,7 +473,7 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
                     direction = { x = "BOTTOMRIGHT", y = "BOTTOMRIGHT" },
                     coords = { x = -24, y = 24 },
                     size = { width = 204, height = 32 },
-                    content = STIKConstants.texts.settings.unactivateButton,
+                    content = plotInfo.buttons.leave,
                 });
 
                 settingsPanel.SinglePlot.UnactivateButton:SetScript("OnClick", function()
@@ -491,7 +494,7 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
                     direction = { x = "BOTTOMLEFT", y = "BOTTOMLEFT" },
                     coords = { x = 24, y = 24 },
                     size = { width = 96, height = 32 },
-                    content = STIKConstants.texts.settings.removePlot,
+                    content = plotInfo.buttons.remove,
                 });
 
                 settingsPanel.SinglePlot.DeleteButton:SetScript("OnClick", function()
@@ -503,8 +506,8 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
                 end);
 
                 local selectBtnContent = nil;
-                if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = STIKConstants.texts.settings.unselectPlot;
-                else selectBtnContent = STIKConstants.texts.settings.selectPlot;
+                if (plotID == playerInfo.settings.currentPlot) then selectBtnContent = plotInfo.buttons.unselect;
+                else selectBtnContent = plotInfo.buttons.activate;
                 end;
 
                 settingsPanel.SinglePlot.SelectButton = gui.createDefaultButton({
@@ -543,7 +546,6 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
                 if (SettingsPanel.Scrollbar) then SettingsPanel.Scrollbar:Hide(); end;
             end;
         end;
-
         
         STIKPanelLinks.Settings = settingsPanel;
 
