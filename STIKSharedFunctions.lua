@@ -70,4 +70,25 @@ STIKSharedFunctions = {
         StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..params.points);
         return stat;
     end,
+    preloadChecks = function(context)
+        if (context == nil) then return 'NO_PLOT_SELECTED' end;
+
+        if (not(STIKSharedFunctions.isHashOK(context))) then
+            message(STIKConstants.texts.err.hashIsWrong);
+            context = {
+                hash = 2034843419,
+                stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
+                progress = { expr = 0, lvl = 1 },
+                flags = { isInBattle = 0 },
+                armor = { legs = "nothing", head = "nothing", body = "nothing" },
+                params = { shield = 0, points = 100, health = 3 },
+            }
+
+            context.params.points = STIKSharedFunctions.calculatePoints(context.stats, context.progress);
+            context.params.health = STIKSharedFunctions.calculateHealth(context.stats);
+            playerInfo[playerInfo.settings.currentPlot] = context;
+        end;
+
+        return 'OK';
+    end;
 };

@@ -15,3 +15,4 @@ STIKSendRaidRequest.lua
 STIKShowTargetInfo.lua
 HashString.lua
 SortTable.lua
+STIKViewGenerator.lua
