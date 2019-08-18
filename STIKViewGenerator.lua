@@ -1,7 +1,9 @@
 local mainPanelViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
     local generator = function (isShort)
         local createMainPanel = function()
-            local panelHeight = 290;
+            local mainPanelButtons = STIKConstants.mainPanelButtons;
+
+            local panelHeight = 46 * #mainPanelButtons;
             if (isShort) then panelHeight = 80; end;
             return gui.createDefaultFrame({
                 parent = UIParent,
@@ -113,10 +115,12 @@ end;
 local statPanelViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
     local generator = function(mainPanel)
         local createStatPanel = function ()
+            local statsPanelCharsElements = STIKConstants.statsPanelElements.chars;
+
             local statPanel = gui.createDefaultFrame({
                 parent = mainPanel,
                 title = STIKConstants.texts.stats.stat,
-                size = { width = 240, height = 260 },
+                size = { width = 240, height = 60 + 33 * #statsPanelCharsElements },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
             });
@@ -151,7 +155,7 @@ local statPanelViewGenerator = function(progress, armor, stats, flags, params, n
                     parent = statPanel,
                     content = metaElement.getContent(progress, params, neededExpr),
                     coords = metaCoords,
-                    direction = { x = "LEFT", y = "TOP" }
+                    direction = { x = "LEFT", y = "BOTTOM" }
                 });
             end;
         end;
@@ -169,10 +173,11 @@ end;
 local dicePanelViewGenerator = function (progress, armor, stats, flags, params, neededExpr)
     local generator = function(mainPanel)
         local createDicePanel = function ()
+            local dicePanelElements = STIKConstants.dicePanelElements;
             local dicePanel = gui.createDefaultFrame({
                 parent = mainPanel,
                 title = STIKConstants.texts.dices,
-                size = { width = 80, height = 320 },
+                size = { width = 80, height = 44 * #dicePanelElements },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
             });
@@ -181,9 +186,10 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
         end;
 
         local createDiceMenu = function (dicePanel)
+            local rollsCount = #STIKConstants.rollSizes;
             dicePanel.Menu = gui.createDefaultFrame({
                 parent = dicePanel,
-                size = { width = 236, height = 60 },
+                size = { width = 59 * rollsCount, height = 60 },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 0, y = 0 },
             });
@@ -203,7 +209,7 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
             end;
         end;
 
-        local registerDicesTypes = function (dicePanel)            
+        local registerDicesTypes = function (dicePanel)
             local dicePanelElements = STIKSortTable(STIKConstants.dicePanelElements);
             for i = 1, #dicePanelElements do
                 local diceType = dicePanelElements[i];
@@ -244,9 +250,10 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         end;
 
         local createArmorMenu = function (armorPanel)
+            local armorTypesCount = #STIKConstants.armorTypes;
             armorPanel.Menu = gui.createDefaultFrame({
                 parent = armorPanel,
-                size = { width = 430, height = 60 },
+                size = { width = 86 * armorTypesCount, height = 60 },
                 aligment = { x = "LEFT", y = "TOP" },
                 point = { x = 70, y = -60 },
             });

@@ -61,28 +61,28 @@ STIKConstants = {
         },
     },
     mainPanelButtons = {
-        [1] = {
+        {
             name = "Roll",
             image = "dice_pve",
             hint = "Кубы",
             highlight = true,
             showPanel = 'DicePanel',
         },
-        [2] = {
+        {
             name = "Stat",
             image = "stat",
             hint = "Характеристики",
             highlight = true,
             showPanel = 'StatPanel',
         },
-        [3] = {
+        {
             name = "Armor",
             image = "armor",
             hint = "Носимые доспехи",
             highlight = true,
             showPanel = 'ArmorPanel',
         },
-        [4] = {
+        {
             name = "HP",
             image = "hp",
             hint = "Здоровье",
@@ -90,7 +90,7 @@ STIKConstants = {
             showPanel = nil,
             displayParameter = 'health',
         },
-        [5] = {
+        {
             name = "Shield",
             image = "shield",
             hint = "Барьеры, щиты",
@@ -98,7 +98,7 @@ STIKConstants = {
             showPanel = nil,
             displayParameter = 'shield',
         },
-        [6] = {
+        {
             name = "Settings",
             image = "settings",
             hint = "Настройки",
@@ -118,21 +118,21 @@ STIKConstants = {
         meta = {
             {
                 name = 'Level',
-                coords = { x = 'BY_MARGIN', y = -225 },
+                coords = { x = 'BY_MARGIN', y = 35 },
                 getContent = function(progress, params, neededExpr)
                     return STIKConstants.texts.stats.level..": "..progress.lvl;
                 end,
             },
             {
                 name = 'Exp',
-                coords = { x = -90, y = -225 },
+                coords = { x = -90, y = 35 },
                 getContent = function(progress, params, neededExpr)
                     return STIKConstants.texts.stats.expr..": "..progress.expr.."/"..neededExpr;
                 end,
             },
             {
                 name = 'Avl',
-                coords = { x = -90, y = -205 },
+                coords = { x = -90, y = 55 },
                 getContent = function(progress, params, neededExpr)
                     return STIKConstants.texts.stats.avaliable..": "..params.points;
                 end,

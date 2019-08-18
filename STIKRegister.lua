@@ -47,7 +47,8 @@ STIKRegister = {
                     if ((prevStat == settings.views.menu.stat) and (settings.views.menu:IsVisible())) then 
                         settings.views.menu:Hide();
                     else
-                        settings.views.menu:SetPoint("LEFT", settings.views.main, "TOPLEFT", 137, 5 + settings.coords.y);
+                        local countOfDices = #STIKConstants.dicePanelElements;
+                        settings.views.menu:SetPoint("LEFT", settings.views.main, "TOPLEFT", 137, (-175 + countOfDices * 25) + settings.coords.y);
                         settings.views.menu:Show();
                     end
                 end
