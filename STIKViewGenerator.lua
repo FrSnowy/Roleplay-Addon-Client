@@ -190,42 +190,29 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
         end;
 
         local registerRolls = function (dicePanel)
-            local dices = {
-                { info = { size = 6, penalty = 1.2 }, coords = { x = 36, y = 12 } },
-                { info = { size = 12, penalty = 1.3 }, coords = { x = 90, y = 12 } },
-                { info = { size = 20, penalty = 1.4 }, coords = { x = 144, y = 12 } },
-                { info = { size = 100, penalty = 1.4 }, coords = { x = 198, y = 12} },
-            };
-
-            for index, dice in pairs(dices) do
+            local rollSizesElements = STIKSortTable(STIKConstants.rollSizes);
+            for i = 1, #rollSizesElements do
+                local rollInfo = rollSizesElements[i];
                 STIKRegister.roll({
                     parent = dicePanel.Menu,
-                    coords = dice.coords,
-                    dice = dice.info,
-                }, STIKSharedFunctions.getPlayerContext(playerInfo));
-            end
+                    coords = { x = 36 + 54 * (i - 1), y = 12 },
+                    dice = rollInfo,
+                }, STIKSharedFunctions.getPlayerContext(playerInfo))
+            end;
         end;
 
-        local registerDicesTypes = function (dicePanel)
-            local stats = {
-                { name = 'str', coords = { x = 0, y = 3 * STIKConstants.smallButton.height + 30 }, image = 'sword' },
-                { name = 'ag', coords = { x = 0, y = 2 * STIKConstants.smallButton.height + 20 }, image = 'dagger' },
-                { name = 'snp', coords = { x = 0, y = STIKConstants.smallButton.height + 10 }, image = 'bow' },
-                { name = 'mg', coords = { x = 0, y = 0 }, image = 'magic' },
-                { name = 'body', coords = { x = 0, y = -STIKConstants.smallButton.height - 10 }, image = 'strong' },
-                { name = 'moral', coords = { x = 0, y = -2* STIKConstants.smallButton.height - 20 }, image = 'fear' },
-                { name = 'luck', coords = { x = 0, y = -3 * STIKConstants.smallButton.height - 30 }, image = 'luck' },
-            };
-
-            for index, stat in pairs(stats) do
+        local registerDicesTypes = function (dicePanel)            
+            local dicePanelElements = STIKSortTable(STIKConstants.dicePanelElements);
+            for i = 1, #dicePanelElements do
+                local diceType = dicePanelElements[i];
                 STIKRegister.dice({
                     views = { parent = dicePanel, main = MainPanelSTIK, menu = dicePanel.Menu },
-                    coords = stat.coords,
-                    image = stat.image,
-                    hint = STIKConstants.texts.stats[stat.name],
-                    stat = stat.name,
+                    coords = { x = 0, y = -i * (STIKConstants.smallButton.height + 10) - 15},
+                    image = diceType.image,
+                    hint = STIKConstants.texts.stats[diceType.name],
+                    stat = diceType.name,
                 });
-            end
+            end;
         end;
 
         local dicePanel = createDicePanel();

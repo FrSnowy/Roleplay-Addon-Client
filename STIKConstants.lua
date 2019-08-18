@@ -151,6 +151,21 @@ STIKConstants = {
             },
         },
     },
+    dicePanelElements = {
+        { name = 'str', image = 'sword' },
+        { name = 'ag', image = 'dagger' },
+        { name = 'sng', image = 'bow' },
+        { name = 'mg', image = 'magic' },
+        { name = 'body', image = 'strong' },
+        { name = 'moral', image = 'fear' },
+        { name = 'luck', image = 'luck' },
+    },
+    rollSizes = {
+        { size = 6, penalty = 1.2 },
+        { size = 12, penalty = 1.3 },
+        { size = 20, penalty = 1.4 },
+        { size = 100, penalty = 1.4 },
+    },
     armorPenalty = {
         head = {
             nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, moral = -0.05, luck = 0 },

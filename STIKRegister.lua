@@ -29,7 +29,7 @@ STIKRegister = {
     dice = function (settings)
         local function setDiceView(view)
             view:SetSize(STIKConstants.smallButton.width, STIKConstants.smallButton.height);
-            view:SetPoint("CENTER", settings.views.parent, "CENTER", settings.coords.x, -10 + settings.coords.y);
+            view:SetPoint("CENTER", settings.views.parent, "TOP", settings.coords.x, -10 + settings.coords.y);
             view:RegisterForClicks("AnyUp");
             view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
             view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
@@ -47,7 +47,7 @@ STIKRegister = {
                     if ((prevStat == settings.views.menu.stat) and (settings.views.menu:IsVisible())) then 
                         settings.views.menu:Hide();
                     else
-                        settings.views.menu:SetPoint("LEFT", settings.views.main, "LEFT", 130, -10 + settings.coords.y);
+                        settings.views.menu:SetPoint("LEFT", settings.views.main, "TOPLEFT", 137, 5 + settings.coords.y);
                         settings.views.menu:Show();
                     end
                 end
