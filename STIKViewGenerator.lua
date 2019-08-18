@@ -79,7 +79,7 @@ local mainPanelViewGenerator = function(progress, armor, stats, flags, params, n
 end;
 
 local targetInfoViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
-    return function()
+    local generator = function()
         local createTargetFrame = function ()
             return gui.createDefaultFrame({
                 parent = TargetFrame,
@@ -106,6 +106,8 @@ local targetInfoViewGenerator = function(progress, armor, stats, flags, params, 
         STIKPanelLinks.TargetFrame = targetFrame;
         return targetFrame;
     end;
+
+    return generator;
 end;
 
 local statPanelViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
@@ -254,51 +256,37 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         end;
 
         local registerArmorTypes = function (armorPanel)
-            local armors = {
-                { class = 'cloth', coords = { x = 50, y = 12 } },
-                { class = 'leather', coords = { x = 130, y = 12 } },
-                { class = 'mail', coords = { x = 210, y = 12 } },
-                { class = 'plate', coords = { x = 290, y = 12 } },
-                { class = 'nothing', coords = { x = 370, y = 12 } },
-            };
-
-            for index, armor in pairs(armors) do
+            local armorVariations = STIKSortTable(STIKConstants.armorTypes);
+            for i = 1, #armorVariations do
+                local armor = armorVariations[i];
                 STIKRegister.armorType({
                     parent = armorPanel.Menu,
-                    armorType = armor.class,
-                    coords = armor.coords,
+                    armorType = armor.name,
+                    coords = { x = 50 + 80 * (i - 1), y = 12 },
                 }, STIKSharedFunctions.getPlayerContext(playerInfo));
-            end
+            end;
         end;
 
         local registerArmorSlots = function (armorPanel)
-            local slots = {
-                {
-                    name = 'head',
-                    line = { coords = { x = -70, y = -60 }, direction = { x = "LEFT", y = "TOP" } },
-                    button = { coords = { x = 70, y = -60 }, direction = { x = "RIGHT", y = "TOP" } }
-                },
-                {
-                    name = 'body',
-                    line = { coords = { x = -70, y = -90 }, direction = { x = "LEFT", y = "TOP" } },
-                    button = { coords = { x = 70, y = -90 }, direction = { x = "RIGHT", y = "TOP" } }
-                },
-                {
-                    name = 'legs',
-                    line = { coords = { x = -70, y = -120 }, direction = { x = "LEFT", y = "TOP" } },
-                    button = { coords = { x = 70, y = -120 }, direction = { x = "RIGHT", y = "TOP" } }
-                }
-            }
+            local armorSlots = STIKSortTable(STIKConstants.armorSlots);
+            for i = 1, #armorSlots do
+                local armorSlot = armorSlots[i];
+                local lineConfig = {
+                    coords = { x = -70, y = -60 - 30 * (i - 1) },
+                    direction = { x = "LEFT", y = "TOP" },
+                };
+                local buttonConfig = {
+                    coords = { x = 70, y = -60 - 30 * (i - 1) },
+                    direction = { x = "RIGHT", y = "TOP" },
+                };
 
-            for index, _slot in pairs(slots) do
                 STIKRegister.armor({
                     views = { parent = armorPanel, armorMenu = armorPanel.Menu },
-                    slot = _slot.name,
-                    line = _slot.line,
-                    button = _slot.button,
+                    slot = armorSlot.name,
+                    line = lineConfig,
+                    button = buttonConfig,
                 }, STIKSharedFunctions.getPlayerContext(playerInfo));
-            end
-            
+            end;            
         end;
 
         local armorPanel = createArmorPanel();
@@ -329,85 +317,36 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
         end;
 
         local createCheckboxPart = function(settingsPanel)
+            local cBoxesInfo = STIKConstants.settingsPanelElements.cBoxes;
+            local cBoxes = STIKSortTable(cBoxesInfo.boxes);
+
             local checkboxTitle = settingsPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
             checkboxTitle:SetPoint("TOPLEFT", settingsPanel, "TOPLEFT", 20, -56);
-            checkboxTitle:SetText(STIKConstants.texts.settings.parameters);
+            checkboxTitle:SetText(cBoxesInfo.title);
 
-            settingsPanel.handlePlotInvites = gui.createCheckbox({
-                parent = settingsPanel,
-                content = STIKConstants.texts.settings.getPlotInv,
-                wrapper = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 16, y = 76 },
-                    size = { width = 290, height = 32 },
-                },
-                checkbox = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 0, y = 0 },
-                    size = { width = 32, height = 32 },
-                },
-            });
-            settingsPanel.handlePlotInvites.Checkbox:SetChecked(playerInfo.settings.getPlotInvites);
-            settingsPanel.handlePlotInvites.Checkbox:SetScript("OnClick", function(self)
-                playerInfo.settings.getPlotInvites = self:GetChecked();
-            end);
+            for i = 1, #cBoxes do
+                local checkBox = cBoxes[i];
 
-            settingsPanel.handleEventInvites = gui.createCheckbox({
-                parent = settingsPanel,
-                content = STIKConstants.texts.settings.getEventInv,
-                wrapper = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 16, y = 114 },
-                    size = { width = 290, height = 32 },
-                },
-                checkbox = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 0, y = 0 },
-                    size = { width = 32, height = 32 },
-                },
-            });
-            settingsPanel.handleEventInvites.Checkbox:SetChecked(playerInfo.settings.getEventInvites);
-            settingsPanel.handleEventInvites.Checkbox:SetScript("OnClick", function(self)
-                playerInfo.settings.getEventInvites = self:GetChecked();
-            end);
+                settingsPanel[checkBox.name] = gui.createCheckbox({
+                    parent = settingsPanel,
+                    content = checkBox.content,
+                    wrapper = {
+                        aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                        point = { x = 16, y = 76 + 38 * (i - 1) },
+                        size = { width = 290, height = 32 },
+                    },
+                    checkbox = {
+                        aligment = { x = "TOPLEFT", y = "TOPLEFT" },
+                        point = { x = 0, y = 0 },
+                        size = { width = 32, height = 32 },
+                    },
+                });
 
-            settingsPanel.showRollInfo = gui.createCheckbox({
-                parent = settingsPanel,
-                content = STIKConstants.texts.settings.showRollInfo,
-                wrapper = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 16, y = 154 },
-                    size = { width = 290, height = 32 },
-                },
-                checkbox = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 0, y = 0 },
-                    size = { width = 32, height = 32 },
-                },
-            });
-            settingsPanel.showRollInfo.Checkbox:SetChecked(playerInfo.settings.showRollInfo);
-            settingsPanel.showRollInfo.Checkbox:SetScript("OnClick", function(self)
-                playerInfo.settings.showRollInfo = self:GetChecked();
-            end);
-
-            settingsPanel.showDeclineMessages = gui.createCheckbox({
-                parent = settingsPanel,
-                content = STIKConstants.texts.settings.showDeclineMessages,
-                wrapper = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 16, y = 194 },
-                    size = { width = 290, height = 32 },
-                },
-                checkbox = {
-                    aligment = { x = "TOPLEFT", y = "TOPLEFT" },
-                    point = { x = 0, y = 0 },
-                    size = { width = 32, height = 32 },
-                },
-            });
-            settingsPanel.showDeclineMessages.Checkbox:SetChecked(playerInfo.settings.showDeclineMessages);
-            settingsPanel.showDeclineMessages.Checkbox:SetScript("OnClick", function(self)
-                playerInfo.settings.showDeclineMessages = self:GetChecked();
-            end);
+                settingsPanel[checkBox.name].Checkbox:SetChecked(playerInfo.settings[checkBox.name]);
+                settingsPanel[checkBox.name].Checkbox:SetScript("OnClick", function(self)
+                    playerInfo.settings[checkBox.name] = self:GetChecked();
+                end);
+            end;
         end;
 
         local createPlotsPart = function(settingsPanel)
@@ -433,9 +372,7 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
                     size = { width = 240, height = 24 },
                     point = { x = 290, y = 80 },
                     text = plot.name;
-                    clickHandler = function()
-                        settingsPanel.createSinglePlot(plotID);
-                    end,
+                    clickHandler = function() settingsPanel.createSinglePlot(plotID);  end,
                 });
                 plotView.Text:SetTextColor(0.901, 0.494, 0.133, 1);
             else
@@ -455,9 +392,7 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
                             size = { width = 240, height = 24 },
                             point = { x = 290, y = 80 + 32 * (plotIndex - settingsPanel.plotsOffset) },
                             text = plot.name;
-                            clickHandler = function()
-                                settingsPanel.createSinglePlot(plotID);
-                            end,
+                            clickHandler = function() settingsPanel.createSinglePlot(plotID); end,
                         });
                         table.insert(settingsPanel.Plots, plotView);
                     end;

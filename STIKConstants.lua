@@ -38,11 +38,6 @@ STIKConstants = {
         dices = "Кубы",
         settings = {
             title = "Настройки",
-            getPlotInv = "Получать приглашения в сюжеты",
-            getEventInv = "Получать приглашения на события",
-            showDeclineMessages = "Показывать уведомления об отказе",
-            showRollInfo = "Показывать информацию о броске",
-            parameters = "Параметры",
             parts = "Сохраненные сюжеты",
             plot = "Сюжет",
             removePlot = "Удалить",
@@ -166,6 +161,18 @@ STIKConstants = {
         { size = 20, penalty = 1.4 },
         { size = 100, penalty = 1.4 },
     },
+    armorTypes = {
+        { name = 'cloth' },
+        { name = 'leather' },
+        { name = 'mail' },
+        { name = 'plate' },
+        { name = 'nothing' },
+    },
+    armorSlots = {
+        { name = 'head' },
+        { name = 'body' },
+        { name = 'legs' },
+    },
     armorPenalty = {
         head = {
             nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, moral = -0.05, luck = 0 },
@@ -187,6 +194,29 @@ STIKConstants = {
             leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, moral = 0.03, luck = 0 },
             mail = { str = 0.05, ag = -0.05, snp = 0, mg = -0.02, body = 0.05, moral = 0.07, luck = 0 },
             plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.1, moral = 0.1, luck = 0 },
+        },
+    },
+    settingsPanelElements = {
+        cBoxes = {
+            title = "Параметры",
+            boxes = {
+                {
+                    name = "getPlotInvites",
+                    content = "Получать приглашения в сюжеты",
+                },
+                {
+                    name = "getEventInvites",
+                    content = "Получать приглашения на события",
+                },
+                {
+                    name = "showRollInfo",
+                    content = "Показывать информацию о броске",
+                },
+                {
+                    name = "showDeclineMessages",
+                    content = "Показывать уведомления об отказе",
+                },
+            },
         },
     },
 };
