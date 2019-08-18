@@ -79,9 +79,9 @@ function onDMSaySomething(prefix, msg, tp, sender)
             StatPanel.stat_mg:SetText(STIKConstants.texts.stats.mg..": "..plot.stats.mg);
             StatPanel.stat_body:SetText(STIKConstants.texts.stats.body..": "..plot.stats.body);
             StatPanel.stat_moral:SetText(STIKConstants.texts.stats.moral..": "..plot.stats.moral);
-            StatPanel.Level:SetText(STIKConstants.texts.stats.level..": "..plot.progress.lvl);
-            StatPanel.Exp:SetText(STIKConstants.texts.stats.expr..": "..plot.progress.expr.."/"..plot.progress.lvl * 1000);
-            StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..STIKSharedFunctions.calculatePoints(plot.stats, plot.progress));
+            StatPanel.Level:SetText(STIKConstants.texts.statsMeta.level..": "..plot.progress.lvl);
+            StatPanel.Exp:SetText(STIKConstants.texts.statsMeta.expr..": "..plot.progress.expr.."/"..plot.progress.lvl * 1000);
+            StatPanel.Avl:SetText(STIKConstants.texts.statsMeta.avaliable..": "..STIKSharedFunctions.calculatePoints(plot.stats, plot.progress));
 
             plot.params.health = STIKSharedFunctions.calculateHealth(plot.stats);
             MainPanelSTIK.HP.Text:SetText(plot.params.health);

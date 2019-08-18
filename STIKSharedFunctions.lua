@@ -67,7 +67,7 @@ STIKSharedFunctions = {
 
         stat = jobConnector[job]();
         params.points = params.points - (stat - prevStatValue);
-        StatPanel.Avl:SetText(STIKConstants.texts.stats.avaliable..": "..params.points);
+        StatPanel.Avl:SetText(STIKConstants.texts.statsMeta.avaliable..": "..params.points);
         return stat;
     end,
     preloadChecks = function(context)

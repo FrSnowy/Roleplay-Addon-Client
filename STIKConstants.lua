@@ -21,12 +21,9 @@ STIKConstants = {
             body = "Крепость",
             moral = "Мораль",
             luck = "Удача",
+        },
+        statsMeta = {
             level = "Уровень",
-            hp = "Здоровье",
-            shield = "Барьеры, щиты",
-            armor = "Носимые доспехи",
-    
-            stat = "Характеристики",
             expr = "Опыт",
             avaliable = "Доступно",
         },
@@ -34,10 +31,6 @@ STIKConstants = {
             add = "add",
             remove = "remove",
             clear = "clear",
-        },
-        dices = "Кубы",
-        settings = {
-            title = "Настройки",
         },
         err = {
             battle = "Нельзя изменить значение характеристики в процессе боя",
@@ -107,6 +100,7 @@ STIKConstants = {
         },
     },
     statsPanelElements = {
+        title = "Характеристики",
         chars = {
             { name = 'str' },
             { name = 'ag' },
@@ -120,51 +114,57 @@ STIKConstants = {
                 name = 'Level',
                 coords = { x = 'BY_MARGIN', y = 35 },
                 getContent = function(progress, params, neededExpr)
-                    return STIKConstants.texts.stats.level..": "..progress.lvl;
+                    return STIKConstants.texts.statsMeta.level..": "..progress.lvl;
                 end,
             },
             {
                 name = 'Exp',
                 coords = { x = -90, y = 35 },
                 getContent = function(progress, params, neededExpr)
-                    return STIKConstants.texts.stats.expr..": "..progress.expr.."/"..neededExpr;
+                    return STIKConstants.texts.statsMeta.expr..": "..progress.expr.."/"..neededExpr;
                 end,
             },
             {
                 name = 'Avl',
                 coords = { x = -90, y = 55 },
                 getContent = function(progress, params, neededExpr)
-                    return STIKConstants.texts.stats.avaliable..": "..params.points;
+                    return STIKConstants.texts.statsMeta.avaliable..": "..params.points;
                 end,
             },
         },
     },
     dicePanelElements = {
-        { name = 'str', image = 'sword' },
-        { name = 'ag', image = 'dagger' },
-        { name = 'sng', image = 'bow' },
-        { name = 'mg', image = 'magic' },
-        { name = 'body', image = 'strong' },
-        { name = 'moral', image = 'fear' },
-        { name = 'luck', image = 'luck' },
+        title = "Кубы",
+        elements = {
+            { name = 'str', image = 'sword' },
+            { name = 'ag', image = 'dagger' },
+            { name = 'sng', image = 'bow' },
+            { name = 'mg', image = 'magic' },
+            { name = 'body', image = 'strong' },
+            { name = 'moral', image = 'fear' },
+            { name = 'luck', image = 'luck' },
+        },
+    },
+    armorPanelElements = {
+        title = "Носимые доспехи",
+        types = {
+            { name = 'cloth' },
+            { name = 'leather' },
+            { name = 'mail' },
+            { name = 'plate' },
+            { name = 'nothing' },
+        },
+        slots = {
+            { name = 'head' },
+            { name = 'body' },
+            { name = 'legs' },
+        }
     },
     rollSizes = {
         { size = 6, penalty = 1.2 },
         { size = 12, penalty = 1.3 },
         { size = 20, penalty = 1.4 },
         { size = 100, penalty = 1.4 },
-    },
-    armorTypes = {
-        { name = 'cloth' },
-        { name = 'leather' },
-        { name = 'mail' },
-        { name = 'plate' },
-        { name = 'nothing' },
-    },
-    armorSlots = {
-        { name = 'head' },
-        { name = 'body' },
-        { name = 'legs' },
     },
     armorPenalty = {
         head = {
@@ -190,6 +190,7 @@ STIKConstants = {
         },
     },
     settingsPanelElements = {
+        title = "Настройки",
         cBoxes = {
             title = "Параметры",
             boxes = {

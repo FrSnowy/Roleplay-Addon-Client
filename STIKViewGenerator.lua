@@ -119,7 +119,7 @@ local statPanelViewGenerator = function(progress, armor, stats, flags, params, n
 
             local statPanel = gui.createDefaultFrame({
                 parent = mainPanel,
-                title = STIKConstants.texts.stats.stat,
+                title = STIKConstants.statsPanelElements.title,
                 size = { width = 240, height = 60 + 33 * #statsPanelCharsElements },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
@@ -173,10 +173,10 @@ end;
 local dicePanelViewGenerator = function (progress, armor, stats, flags, params, neededExpr)
     local generator = function(mainPanel)
         local createDicePanel = function ()
-            local dicePanelElements = STIKConstants.dicePanelElements;
+            local dicePanelElements = STIKConstants.dicePanelElements.elements;
             local dicePanel = gui.createDefaultFrame({
                 parent = mainPanel,
-                title = STIKConstants.texts.dices,
+                title = STIKConstants.dicePanelElements.title,
                 size = { width = 80, height = 44 * #dicePanelElements },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
@@ -210,7 +210,7 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
         end;
 
         local registerDicesTypes = function (dicePanel)
-            local dicePanelElements = STIKSortTable(STIKConstants.dicePanelElements);
+            local dicePanelElements = STIKSortTable(STIKConstants.dicePanelElements.elements);
             for i = 1, #dicePanelElements do
                 local diceType = dicePanelElements[i];
                 STIKRegister.dice({
@@ -239,7 +239,7 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         local createArmorPanel = function ()
             local armorPanel = gui.createDefaultFrame({
                 parent = mainPanel,
-                title = STIKConstants.texts.stats.armor,
+                title = STIKConstants.armorPanelElements.title,
                 size = { width = 180, height = 235 },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
@@ -250,7 +250,7 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         end;
 
         local createArmorMenu = function (armorPanel)
-            local armorTypesCount = #STIKConstants.armorTypes;
+            local armorTypesCount = #STIKConstants.armorPanelElements.types;
             armorPanel.Menu = gui.createDefaultFrame({
                 parent = armorPanel,
                 size = { width = 86 * armorTypesCount, height = 60 },
@@ -263,7 +263,7 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         end;
 
         local registerArmorTypes = function (armorPanel)
-            local armorVariations = STIKSortTable(STIKConstants.armorTypes);
+            local armorVariations = STIKSortTable(STIKConstants.armorPanelElements.types);
             for i = 1, #armorVariations do
                 local armor = armorVariations[i];
                 STIKRegister.armorType({
@@ -275,7 +275,7 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         end;
 
         local registerArmorSlots = function (armorPanel)
-            local armorSlots = STIKSortTable(STIKConstants.armorSlots);
+            local armorSlots = STIKSortTable(STIKConstants.armorPanelElements.slots);
             for i = 1, #armorSlots do
                 local armorSlot = armorSlots[i];
                 local lineConfig = {
@@ -312,7 +312,7 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
         local createSettingsPanel = function()
             local settingsPanel = gui.createDefaultFrame({
                 parent = mainPanel,
-                title = STIKConstants.texts.settings.title,
+                title = STIKConstants.settingsPanelElements.title,
                 size = { width = 580, height = 290 },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
