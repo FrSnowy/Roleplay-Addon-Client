@@ -72,6 +72,85 @@ STIKConstants = {
             nothing = "Ничего",
         },
     },
+    mainPanelButtons = {
+        [1] = {
+            name = "Roll",
+            image = "dice_pve",
+            hint = "Кубы",
+            highlight = true,
+            showPanel = 'DicePanel',
+        },
+        [2] = {
+            name = "Stat",
+            image = "stat",
+            hint = "Характеристики",
+            highlight = true,
+            showPanel = 'StatPanel',
+        },
+        [3] = {
+            name = "Armor",
+            image = "armor",
+            hint = "Носимые доспехи",
+            highlight = true,
+            showPanel = 'ArmorPanel',
+        },
+        [4] = {
+            name = "HP",
+            image = "hp",
+            hint = "Здоровье",
+            highlight = false,
+            showPanel = nil,
+            displayParameter = 'health',
+        },
+        [5] = {
+            name = "Shield",
+            image = "shield",
+            hint = "Барьеры, щиты",
+            highlight = false,
+            showPanel = nil,
+            displayParameter = 'shield',
+        },
+        [6] = {
+            name = "Settings",
+            image = "settings",
+            hint = "Настройки",
+            highlight = true,
+            showPanel = 'SettingsPanel',
+        },
+    },
+    statsPanelElements = {
+        chars = {
+            { name = 'str' },
+            { name = 'ag' },
+            { name = 'snp' },
+            { name = 'mg' },
+            { name = 'body' },
+            { name = 'moral' },
+        },
+        meta = {
+            {
+                name = 'Level',
+                coords = { x = 'BY_MARGIN', y = -225 },
+                getContent = function(progress, params, neededExpr)
+                    return STIKConstants.texts.stats.level..": "..progress.lvl;
+                end,
+            },
+            {
+                name = 'Exp',
+                coords = { x = -90, y = -225 },
+                getContent = function(progress, params, neededExpr)
+                    return STIKConstants.texts.stats.expr..": "..progress.expr.."/"..neededExpr;
+                end,
+            },
+            {
+                name = 'Avl',
+                coords = { x = -90, y = -205 },
+                getContent = function(progress, params, neededExpr)
+                    return STIKConstants.texts.stats.avaliable..": "..params.points;
+                end,
+            },
+        },
+    },
     armorPenalty = {
         head = {
             nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, moral = -0.05, luck = 0 },

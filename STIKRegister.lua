@@ -4,7 +4,7 @@ STIKRegister = {
     mainButton = function (settings)
         local function setButtonView(view)
             view:SetSize(STIKConstants.button.width, STIKConstants.button.height);
-            view:SetPoint("CENTER", settings.parent, "CENTER", settings.coords.x, settings.coords.y);
+            view:SetPoint("CENTER", settings.parent, "TOP", settings.coords.x, settings.coords.y);
             view:RegisterForClicks("AnyUp");
             view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
             if (settings.highlight) then

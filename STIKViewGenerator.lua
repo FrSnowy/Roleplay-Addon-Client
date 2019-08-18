@@ -1,13 +1,16 @@
 local mainPanelViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
-    return function ()
+    local generator = function (isShort)
         local createMainPanel = function()
+            local panelHeight = 290;
+            if (isShort) then panelHeight = 80; end;
             return gui.createDefaultFrame({
                 parent = UIParent,
-                size = { width = 80, height = 290 },
+                size = { width = 80, height = panelHeight },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = -60, y = 80 },
             });
         end;
+
         local appendScripts = function(mainPanel)
             mainPanel:SetScript("OnEnter", function(self)
                 self:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
@@ -19,160 +22,60 @@ local mainPanelViewGenerator = function(progress, armor, stats, flags, params, n
                 end; 
             end);
         end;
-        local createButtons = function(mainPanel)
-            mainPanel.Roll = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = 3 * STIKConstants.button.height + 10 },
-                image = "dice_pve", highlight = true,
-                hint = STIKConstants.texts.dices,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                    swapPanel = function()
-                        gui.swapPanel(DicePanel)
-                        if (StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
-                        if (ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
-                        if (SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
-                    end
-                },
-            });
-            mainPanel.Stat = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = 2 * STIKConstants.button.height },
-                image = "stat",
-                highlight = true,
-                hint = STIKConstants.texts.stats.stat,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                    swapPanel = function()
-                        gui.swapPanel(StatPanel)
-                        if (DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
-                        if (ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
-                        if (SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
-                    end
-                },
-            });
-            mainPanel.Armor = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = STIKConstants.button.height - 10 },
-                image = "armor",
-                highlight = true,
-                hint = STIKConstants.texts.stats.armor,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                    swapPanel = function()
-                        gui.swapPanel(ArmorPanel)
-                        if (DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
-                        if (StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
-                        if (SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
-                    end
-                },
-            });
-            mainPanel.HP = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = -20 },
-                image = "hp",
-                highlight = false,
-                hint = STIKConstants.texts.stats.hp,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                },
-            });
-            mainPanel.Shield = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = -STIKConstants.button.height - 30 },
-                image = "shield",
-                highlight = false,
-                hint = STIKConstants.texts.stats.shield,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                },
-            });
-            mainPanel.Settings = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = -2 * STIKConstants.button.height - 40 },
-                image = "settings",
-                highlight = true,
-                hint = STIKConstants.texts.settings.title,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                    swapPanel = function()
-                        gui.swapPanel(SettingsPanel);
-                        if (DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
-                        if (StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
-                        if (ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
+
+        local createButtons = function(mainPanel, isShort)
+            local mainPanelButtons = STIKSortTable(STIKConstants.mainPanelButtons);
+
+            for i = 1, #mainPanelButtons do
+                local panelButton = mainPanelButtons[i];
+                if ((isShort and panelButton.name == 'Settings') or not isShort) then
+                    local panelPosition = - i * (STIKConstants.button.height + 8);
+                    if (isShort) then panelPosition = -40; end;
+
+                    mainPanel[panelButton.name] = STIKRegister.mainButton({
+                        parent = mainPanel,
+                        coords = { x = 0, y = panelPosition },
+                        image = panelButton.image,
+                        highlight = panelButton.highlight,
+                        hint = panelButton.hint,
+                        functions = {
+                            showHint = gui.showPanelHint,
+                            hideHint = gui.hidePanelHint,
+                            swapPanel = function()
+                                if (panelButton.showPanel) then
+                                    local wasVisible = STIKPanelLinks[panelButton.name]:IsVisible();
+                                    if (DicePanel and DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
+                                    if (StatPanel and StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
+                                    if (ArmorPanel and ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
+                                    if (SettingsPanel and SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
+
+                                    if (not wasVisible) then gui.swapPanel(STIKPanelLinks[panelButton.name]); end;
+                                end;
+                            end
+                        },
+                    });
+
+                    if (panelButton.displayParameter) then
+                        mainPanel[panelButton.name].Text = gui.createLine({
+                            parent = mainPanel[panelButton.name],
+                            content = params[panelButton.displayParameter],
+                            coords = { x = 0, y = 0 },
+                            direction = { x = "CENTER", y = "CENTER" }
+                        });
                     end;
-                },
-            });
-            mainPanel.HP.Text = gui.createLine({
-                parent = mainPanel.HP,
-                content = params.health,
-                coords = { x = 0, y = 0 },
-                direction = { x = "CENTER", y = "CENTER" }
-            });
-            mainPanel.Shield.Text = gui.createLine({
-                parent = mainPanel.Shield,
-                content = params.shield,
-                coords = { x = 0, y = 0 },
-                direction = { x = "CENTER", y = "CENTER" }
-            });
+                end;
+            end;
         end;
 
         local mainPanel = createMainPanel();
         appendScripts(mainPanel);
-        createButtons(mainPanel);
+        createButtons(mainPanel, isShort);
+        STIKPanelLinks.MainPanel = mainPanel;        
 
         return mainPanel;
     end;
-end;
 
-local mainPanelShortViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
-    return function()
-        local createMainPanel = function()
-            return gui.createDefaultFrame({
-                parent = UIParent,
-                size = { width = 80, height = 80 },
-                aligment = { x = "LEFT", y = "LEFT" },
-                point = { x = -60, y = 80 },
-            });
-        end;
-
-        local appendScripts = function(mainPanel)
-            mainPanel:SetScript("OnEnter", function(self)
-                self:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
-            end);
-            mainPanel:SetScript("OnLeave", function(self)
-                if (not MouseIsOver(self) and not SettingsPanel:IsVisible()) then
-                    self:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
-                end; 
-            end);
-        end;
-
-        local createButtons = function(mainPanel)
-            mainPanel.Settings = STIKRegister.mainButton({
-                parent = mainPanel,
-                coords = { x = 0, y = 0 },
-                image = "settings",
-                highlight = true,
-                hint = STIKConstants.texts.settings.title,
-                functions = {
-                    showHint = gui.showPanelHint,
-                    hideHint = gui.hidePanelHint,
-                    swapPanel = function() gui.swapPanel(SettingsPanel); end;
-                },
-            });
-        end;
-
-        local mainPanel = createMainPanel();
-        appendScripts(mainPanel);
-        createButtons(mainPanel);
-        return mainPanel;
-    end;
+    return generator;
 end;
 
 local targetInfoViewGenerator = function(progress, armor, stats, flags, params, neededExpr)
@@ -200,6 +103,7 @@ local targetInfoViewGenerator = function(progress, armor, stats, flags, params, 
         targetFrame:SetBackdrop(nil);
         targetFrame:Hide();
         createAttackableStatus(targetFrame);
+        STIKPanelLinks.TargetFrame = targetFrame;
         return targetFrame;
     end;
 end;
@@ -219,49 +123,41 @@ local statPanelViewGenerator = function(progress, armor, stats, flags, params, n
         end;
 
         local displayStats = function (statPanel)
-            local statsToPanel = {
-                { name = "str", coords = { x = -90, y = -50 } },
-                { name = "ag", coords = { x = -90, y = -75 } },
-                { name = "snp", coords = { x = -90, y = -100 } },
-                { name = "mg", coords = { x = -90, y = -125 } },
-                { name = "body", coords = { x = -90, y = -150 } },
-                { name = "moral", coords = { x = -90, y = -175 } },
-            };
-        
-            for index, stat in pairs(statsToPanel) do
-                statPanel["stat_"..stat.name] = STIKRegister.stat({
-                    parent = statPanel, stat = stat.name, coords = stat.coords
+            local statsPanelCharsElements = STIKSortTable(STIKConstants.statsPanelElements.chars);
+            for i = 1, #statsPanelCharsElements do
+                local name = statsPanelCharsElements[i].name;
+                statPanel['stat_'..name] = STIKRegister.stat({
+                    parent = statPanel, stat = name, coords = { x = -90, y = -25 - 25 * i }
                 }, STIKSharedFunctions.getPlayerContext(playerInfo));
             end;
         end;
 
         local displayProgressInfo = function (statPanel)
-            local lvlMargin = 0;
-            if (progress.lvl < 10) then lvlMargin = 35; else lvlMargin = 24; end;
+            local lvlMargin = 24;
+            if (progress.lvl < 10) then lvlMargin = 35; end;
 
-            statPanel.Level = gui.createLine({
-                parent = statPanel,
-                content = STIKConstants.texts.stats.level..": "..progress.lvl,
-                coords = { x = lvlMargin, y = - 225 },
-                direction = { x = "LEFT", y = "TOP" }
-            });
-            statPanel.Exp = gui.createLine({
-                parent = statPanel,
-                content = STIKConstants.texts.stats.expr..": "..progress.expr.."/"..neededExpr,
-                coords = { x = -90, y = -225 },
-                direction = { x = "LEFT", y = "TOP" }
-            });
-            statPanel.Avl = gui.createLine({
-                parent = statPanel,
-                content = STIKConstants.texts.stats.avaliable..": "..params.points,
-                coords = { x = -90, y = -205 },
-                direction = { x = "LEFT", y = "TOP" }
-            });
+            local statPanelMetaElements = STIKSortTable(STIKConstants.statsPanelElements.meta);
+            for i = 1, #statPanelMetaElements do
+                local metaElement = statPanelMetaElements[i];
+                local metaCoords = {
+                    x = metaElement.coords.x,
+                    y = metaElement.coords.y,
+                };
+
+                if (metaCoords.x == 'BY_MARGIN') then metaCoords.x = lvlMargin; end;
+                statPanel[metaElement.name] = gui.createLine({
+                    parent = statPanel,
+                    content = metaElement.getContent(progress, params, neededExpr),
+                    coords = metaCoords,
+                    direction = { x = "LEFT", y = "TOP" }
+                });
+            end;
         end;
 
         local statPanel = createStatPanel();
         displayStats(statPanel);
         displayProgressInfo(statPanel);
+        STIKPanelLinks.Stat = statPanel;
         return statPanel;
     end;
 
@@ -336,6 +232,7 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
         createDiceMenu(dicePanel);
         registerRolls(dicePanel);
         registerDicesTypes(dicePanel);
+        STIKPanelLinks.Roll = dicePanel;
         return dicePanel;
     end;
 
@@ -421,6 +318,7 @@ local armorPanelViewGenerator = function (progress, armor, stats, flags, params,
         createArmorMenu(armorPanel);
         registerArmorTypes(armorPanel);
         registerArmorSlots(armorPanel);
+        STIKPanelLinks.Armor = armorPanel;
         return armorPanel;
     end;
 
@@ -724,6 +622,9 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
             end;
         end;
 
+        
+        STIKPanelLinks.Settings = settingsPanel;
+
         return settingsPanel;
     end;
 
@@ -740,6 +641,8 @@ STIKViewGenerator = function ()
 
     local playerContext = STIKSharedFunctions.getPlayerContext(playerInfo);
 
+    STIKPanelLinks = { };
+
     if (playerContext) then
         progress = playerContext.progress;
         armor = playerContext.armor;
@@ -751,7 +654,6 @@ STIKViewGenerator = function ()
     
     return {
         mainPanel = mainPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
-        mainPanelShort = mainPanelShortViewGenerator(progress, armor, stats, flags, params, neededExpr),
         targetInfo = targetInfoViewGenerator(progress, armor, stats, flags, params, neededExpr),
         statPanel = statPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
         dicePanel = dicePanelViewGenerator(progress, armor, stats, flags, params, neededExpr),

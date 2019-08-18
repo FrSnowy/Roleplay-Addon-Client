@@ -19,7 +19,7 @@ function onAddonReady()
     local addonStatusConnector = {
         OK = function()
             --- Основная панель ---
-            MainPanelSTIK = generator.mainPanel();
+            MainPanelSTIK = generator.mainPanel(false);
             --- Панель цели ---
             targetInfoFrame = generator.targetInfo();
             --- Статы ---
@@ -33,7 +33,7 @@ function onAddonReady()
         end,
         NO_PLOT_SELECTED = function()
             --- Основная панель (только настройки) ---
-            MainPanelSTIK = generator.mainPanelShort();
+            MainPanelSTIK = generator.mainPanel(true);
             --- Панель настроек ---
             SettingsPanel = generator.settingsPanel(MainPanelSTIK);
         end,
