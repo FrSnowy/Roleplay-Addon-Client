@@ -21,6 +21,7 @@ STIKConstants = {
             cntr = "Концентрация",
             body = "Крепость",
             will = "Воля",
+            ptnc = "Терпение",
             luck = "Удача",
         },
         statsMeta = {
@@ -54,7 +55,7 @@ STIKConstants = {
             nothing = "Ничего",
         },
         skillTypes = {
-            battle = 'Боевые',
+            battle = 'Активные',
             passive = 'Пассивные',
             social = 'Социальные',
         },
@@ -65,15 +66,21 @@ STIKConstants = {
             fight_str = 'Силовой бой',
             fight_ag = 'Ловкий бой',
             shooting = 'Стрельба',
-            magica = 'Колдовство',
+            magica = 'Чаротворство',
+            shadows = 'Колдовство',
             holy = 'Свет',
+            elems = 'Стихии',
+            nature = 'Природа',
             armor = 'Ношение доспехов',
             controll = 'Самоконтроль',
             melee_weapon = 'Оружие ближнего боя',
             range_weapon = 'Оружие дальнего боя',
+            hacking = 'Взлом замков',
+            stealth = 'Незаметность',
             talking = 'Убеждение',
             stealing = 'Воровство',
             hearing = 'Подслушивание',
+            profession = 'Профессии',
         },
     },
     mainPanelButtons = {
@@ -139,6 +146,7 @@ STIKConstants = {
             { name = 'cntr' },
             { name = 'body' },
             { name = 'will' },
+            { name = 'ptnc' },
         },
         meta = {
             {
@@ -174,6 +182,7 @@ STIKConstants = {
             { name = 'mg', image = 'magic' },
             { name = 'body', image = 'strong' },
             { name = 'will', image = 'fear' },
+            { name = 'ptnc', image = 'fear' },
             { name = 'luck', image = 'luck' },
         },
     },
@@ -200,25 +209,25 @@ STIKConstants = {
     },
     armorPenalty = {
         head = {
-            nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, will = -0.05, luck = 0 },
-            cloth = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, luck = 0 },
-            leather = { str = 0, ag = -0.03, snp = -0.05, mg = 0, body = 0, will = 0, luck = 0 },
-            mail = { str = 0, ag = -0.05, snp = -0.1,  mg = 0, body = 0.05, will = 0, luck = 0 },
-            plate = { str = 0, ag = -0.07, snp = -0.2, mg = 0, body = 0.1, will = 0, luck = 0 },
+            nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, will = -0.05, ptnc = 0, luck = 0 },
+            cloth = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
+            leather = { str = 0, ag = -0.03, snp = -0.05, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
+            mail = { str = 0, ag = -0.05, snp = -0.1,  mg = 0, body = 0.05, will = 0, ptnc = 0, luck = 0 },
+            plate = { str = 0, ag = -0.07, snp = -0.2, mg = 0, body = 0.1, will = 0, ptnc = 0, luck = 0 },
         },
         body = {
-            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, will = 0, luck = 0 },
-            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, will = 0, luck = 0 },
-            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, luck = 0 },
-            mail = { str = 0.05, ag = -0.05, snp = -0.05, mg = -0.02, body = 0.05, will = 0, luck = 0 },
-            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.2, will = 0, luck = 0 },
+            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, will = 0, ptnc = 0, luck = 0 },
+            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, will = 0, ptnc = 0, luck = 0 },
+            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
+            mail = { str = 0.05, ag = -0.05, snp = -0.05, mg = -0.02, body = 0.05, will = 0, ptnc = 0, luck = 0 },
+            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.2, will = 0, ptnc = 0, luck = 0 },
         },
         legs = {
-            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, will = 0, luck = 0 },
-            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, will = 0, luck = 0 },
-            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, luck = 0 },
-            mail = { str = 0.05, ag = -0.05, snp = 0, mg = -0.02, body = 0.05, will = 0, luck = 0 },
-            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.1, will = 0, luck = 0 },
+            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, will = 0, ptnc = 0, luck = 0 },
+            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, will = 0, ptnc = 0, luck = 0 },
+            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
+            mail = { str = 0.05, ag = -0.05, snp = 0, mg = -0.02, body = 0.05, will = 0, ptnc = 0, luck = 0 },
+            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.1, will = 0, ptnc = 0, luck = 0 },
         },
     },
     settingsPanelElements = {
@@ -283,29 +292,41 @@ STIKConstants = {
             skills = {
                 {
                     name = 'fight_str',
-                    stats = { main = 'str', sub = 'body' },
+                    stats = { main = 'str', sub = 'body', third = 'snp' },
                 },
                 {
                     name = 'fight_ag',
-                    stats = { main = 'ag', sub = 'snp' },
+                    stats = { main = 'ag', sub = 'snp', third = 'str' },
                 },
                 {
                     name = 'shooting',
-                    stats = { main = 'snp', sub = 'cntr' },
+                    stats = { main = 'snp', sub = 'cntr', third = 'ptnc' },
                 },
                 {
                     name = 'magica',
-                    stats = { main = 'mg', sub = 'cntr' },
+                    stats = { main = 'mg', sub = 'cntr', third = 'will' },
+                },
+                {
+                    name = 'shadows',
+                    stats = { main = 'mg', sub = 'cntr', third = 'body' },
                 },
                 {
                     name = 'holy',
-                    stats = { main = 'will', sub = 'cntr' },
+                    stats = { main = 'will', sub = 'ptnc', third = 'cntr' },
                 },
+                {
+                    name = 'elems',
+                    stats = { main = 'will', sub = 'cntr', third = 'ptnc' }
+                },
+                {
+                    name = 'nature',
+                    stats = { main = 'ptnc', sub = 'cntr', third = 'will' }
+                }
             },
             points = {
                 { value = 2, from = { 'str', 'ag', 'mg' } },
                 { value = 4, from = { 'snp', 'cntr', 'will' } },
-                { value = 8, from = { 'body' } },
+                { value = 8, from = { 'body', 'ptnc' } },
             },
         },
         {
@@ -313,24 +334,32 @@ STIKConstants = {
             skills = {
                 {
                     name = 'armor',
-                    stats = { main = 'body', sub = 'str' },
+                    stats = { main = 'body', sub = 'str', third = 'ag' },
                 },
                 {
                     name = 'controll',
-                    stats = { main = 'will', sub = 'body' },
+                    stats = { main = 'will', sub = 'mg', third = 'str' },
                 },
                 {
                     name = 'melee_weapon',
-                    stats = { main = 'str', sub = 'mg' },
+                    stats = { main = 'str', sub = 'mg', third = 'body' },
                 },
                 {
                     name = 'range_weapon',
-                    stats = { main = 'ag', sub = 'snp' },
+                    stats = { main = 'ag', sub = 'snp', third = 'ptnc' },
+                },
+                {
+                    name = 'hacking',
+                    stats = { main = 'ag', sub = 'cntr', third = 'mg' }
+                },
+                {
+                    name = 'stealth',
+                    stats = { main = 'mg', sub = 'ag', third = 'ptnc' }
                 },
             },
             points = {
-                { value = 2, from = { 'body', 'will' } },
-                { value = 4, from = { 'str', 'ag' } },
+                { value = 2, from = { 'body', 'will', 'ag' } },
+                { value = 4, from = { 'str', 'ptnc' } },
                 { value = 8, from = { 'cntr' } }
             },
         },
@@ -339,15 +368,19 @@ STIKConstants = {
             skills = {
                 {
                     name = 'talking',
-                    stats = { main = 'mg', sub = 'will' },
+                    stats = { main = 'mg', sub = 'will', third = 'str' },
                 },
                 {
                     name = 'stealing',
-                    stats = { main = 'ag', sub = 'cntr' },
+                    stats = { main = 'ag', sub = 'cntr', third = 'snp' },
                 },
                 {
                     name = 'hearing',
-                    stats = { main = 'cntr', sub = 'mg' },
+                    stats = { main = 'cntr', sub = 'mg', third = 'snp' },
+                },
+                {
+                    name = 'profession',
+                    stats = { main = 'mg', sub ='ptnc', third = 'cntr' },
                 },
             },
             points = {
