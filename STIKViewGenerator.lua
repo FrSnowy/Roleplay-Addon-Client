@@ -18,7 +18,7 @@ local mainPanelViewGenerator = function(progress, armor, stats, flags, params, n
                 self:SetPoint("LEFT", UIParent, "LEFT", -20, 80);
             end);
             mainPanel:SetScript("OnLeave", function(self)
-                local isAnyPanelVisible = StatPanel:IsVisible() or DicePanel:IsVisible() or ArmorPanel:IsVisible() or SettingsPanel:IsVisible();
+                local isAnyPanelVisible = StatPanel:IsVisible() or SkillPanel:IsVisible() or DicePanel:IsVisible() or ArmorPanel:IsVisible() or SettingsPanel:IsVisible();
                 if (not MouseIsOver(self) and not isAnyPanelVisible) then
                     self:SetPoint("LEFT", UIParent, "LEFT", -60, 80);
                 end; 
@@ -48,6 +48,7 @@ local mainPanelViewGenerator = function(progress, armor, stats, flags, params, n
                                     local wasVisible = STIKPanelLinks[panelButton.name]:IsVisible();
                                     if (DicePanel and DicePanel:IsVisible()) then gui.swapPanel(DicePanel); end;
                                     if (StatPanel and StatPanel:IsVisible()) then gui.swapPanel(StatPanel); end;
+                                    if (SkillPanel and SkillPanel:IsVisible()) then gui.swapPanel(SkillPanel); end;
                                     if (ArmorPanel and ArmorPanel:IsVisible()) then gui.swapPanel(ArmorPanel); end;
                                     if (SettingsPanel and SettingsPanel:IsVisible()) then gui.swapPanel(SettingsPanel); end;
 
@@ -120,7 +121,7 @@ local statPanelViewGenerator = function(progress, armor, stats, flags, params, n
             local statPanel = gui.createDefaultFrame({
                 parent = mainPanel,
                 title = STIKConstants.statsPanelElements.title,
-                size = { width = 240, height = 60 + 33 * #statsPanelCharsElements },
+                size = { width = 240, height = 50 + 33 * #statsPanelCharsElements },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
             });
@@ -562,6 +563,149 @@ local settingsPanelViewGenerator = function (progress, armor, stats, flags, para
     return generator;
 end;
 
+local skillsPanelViewGenerator = function (progress, armor, stats, flags, params, neededExpr)
+    local generator = function(mainPanel)
+        local createSkillPanel = function()
+            local skillTypes = STIKConstants.skillTypes.types;
+
+            local skillPanel = gui.createDefaultFrame({
+                parent = mainPanel,
+                title = STIKConstants.skillTypes.title,
+                size = { width = 90, height = 50 + 40 * #skillTypes },
+                aligment = { x = "LEFT", y = "LEFT" },
+                point = { x = 70, y = 0 }
+            });
+
+            skillPanel:Hide();
+            mainPanel.Skills = skillPanel;
+
+            return skillPanel;
+        end;
+
+        local registerSkillTypes = function (skillPanel)
+            local skillTypes = STIKSortTable(STIKConstants.skillTypes.types);
+            for i = 1, #skillTypes do
+                local skillType = skillTypes[i];
+                STIKRegister.skillType({
+                    name = skillType.name,
+                    views = { parent = skillPanel, main = MainPanelSTIK },
+                    coords = { x = 0, y = -i * (STIKConstants.smallButton.height + 10) - 15},
+                    image = skillType.image,
+                    hint = STIKConstants.texts.skillTypes[skillType.name],
+                });
+            end;
+        end;
+
+        local registerSkillTypeViews = function (skillPanel)
+            local createSkillList = function (panel, category, skills)
+                local sortedSkills = STIKSortTable(skills);
+                for i = 1, #sortedSkills do
+                    local skill = sortedSkills[i];
+                    STIKRegister.skill({
+                        name = skill.name,
+                        category = category,
+                        views = { parent = panel },
+                        coords = { x = -110, y = -i * 25 - 30 },
+                    }, STIKSharedFunctions.getPlayerContext(playerInfo));
+                end;
+            end;
+
+            local calculatePointElements = function (category, context)
+                return function()
+                    local getDefaultPoints = function()
+                        local points = category.points;
+                        local pointSumm = 0;
+
+                        for i = 1, #points do
+                            local pointCategory = points[i];
+                            local koeff = pointCategory.value;
+                            local stats = pointCategory.from;
+
+                            local categorySumm = 0;
+                            for j = 1, #stats do
+                                local currentStat = stats[j];
+                                local statValue = context.stats[currentStat];
+                                local skillValue = math.floor(statValue / koeff);
+                                categorySumm = categorySumm + skillValue;
+                            end;
+
+                            pointSumm = pointSumm + categorySumm;
+                        end;
+
+                        return pointSumm;
+                    end;
+
+                    local getSpentedPoints = function()
+                        local categoryName = category.name;
+                        local contextGroup = context.skills or { };
+                        local contextSkills = contextGroup[categoryName] or { };
+                        local pointSumm = 0;
+
+                        for i = 1, #contextSkills do
+                            pointSumm = pointSumm + contextSkills[i];
+                        end;
+
+                        return pointSumm;
+                    end;
+
+                    local allPoints = getDefaultPoints();
+                    local spentedPoints = getSpentedPoints();
+
+                    return allPoints - spentedPoints;
+                end;
+            end;
+
+            local createSkillPoints = function (panel, category)
+                local getActualPonits = calculatePointElements(category, STIKSharedFunctions.getPlayerContext(playerInfo));
+
+                local available = gui.createLine({
+                    parent = panel,
+                    content = STIKConstants.texts.skillMeta.avaliable..": "..getActualPonits(),
+                    coords = { x = -110, y = 30 },
+                    direction = { x = "LEFT", y = "BOTTOM" }
+                });
+
+                available.RecalcPoints = function()
+                    available:SetText(STIKConstants.texts.skillMeta.avaliable..": "..getActualPonits());
+                end;
+                return available;
+            end;
+
+            local createSkillPanels = function()
+                local skillCategories = STIKSortTable(STIKConstants.skills);
+
+                for i = 1, #skillCategories do
+                    local category = skillCategories[i];
+
+                    local categoryPanel = gui.createDefaultFrame({
+                        parent = skillPanel,
+                        title = STIKConstants.texts.skillTypes[category.name],
+                        size = { width = 300, height = 100 + 25 * #category.skills },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 80, y = 0 },
+                    });
+
+                    categoryPanel:Hide();
+                    createSkillList(categoryPanel, category.name, category.skills);
+                    categoryPanel.Points = createSkillPoints(categoryPanel, category);
+                    mainPanel.Skills[category.name] = categoryPanel;
+                end;
+            end;
+
+            createSkillPanels();
+        end;
+
+        local skillPanel = createSkillPanel();
+        registerSkillTypes(skillPanel);
+        registerSkillTypeViews(skillPanel);
+        STIKPanelLinks.Skill = skillPanel;
+
+        return skillPanel;
+    end;
+
+    return generator;
+end;
+
 STIKViewGenerator = function ()
     local progress = nil;
     local armor = nil;
@@ -587,6 +731,7 @@ STIKViewGenerator = function ()
         mainPanel = mainPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
         targetInfo = targetInfoViewGenerator(progress, armor, stats, flags, params, neededExpr),
         statPanel = statPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
+        skillPanel = skillsPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
         dicePanel = dicePanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
         armorPanel = armorPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),
         settingsPanel = settingsPanelViewGenerator(progress, armor, stats, flags, params, neededExpr),

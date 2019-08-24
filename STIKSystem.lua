@@ -24,6 +24,8 @@ function onAddonReady()
             targetInfoFrame = generator.targetInfo();
             --- Статы ---
             StatPanel = generator.statPanel(MainPanelSTIK);
+            --- Навыки ---
+            SkillPanel = generator.skillPanel(MainPanelSTIK);
             --- Панель кубов ---
             DicePanel = generator.dicePanel(MainPanelSTIK);
             --- Панель брони ---
@@ -320,6 +322,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                         };
                         playerInfo[meta].stats = { str = 0, moral = 0, mg = 0, body = 0, snp = 0, ag = 0 };
                         playerInfo[meta].progress = { expr = 0, lvl = 1 };
+                        playerInfo[meta].skills = { };
                         playerInfo[meta].params = {
                             shield = 0,
                             points = STIKSharedFunctions.calculatePoints(playerInfo[meta].stats, playerInfo[meta].progress),

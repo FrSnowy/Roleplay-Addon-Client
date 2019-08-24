@@ -78,6 +78,7 @@ STIKSharedFunctions = {
             context = {
                 hash = 2034843419,
                 stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
+                skills = { },
                 progress = { expr = 0, lvl = 1 },
                 flags = { isInBattle = 0 },
                 armor = { legs = "nothing", head = "nothing", body = "nothing" },

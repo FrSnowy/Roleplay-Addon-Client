@@ -65,6 +65,7 @@ STIKRegister = {
     end,
     stat = function (settings, playerContext)
         local stats = playerContext.stats;
+        if (not stats[settings.stat]) then stats[settings.stat] = 0; end;
         local panel = gui.createLine({
             parent = settings.parent,
             content = STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat],
@@ -84,6 +85,12 @@ STIKRegister = {
                 panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
                 playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                 MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
+
+                local skillTypes = STIKConstants.skillTypes.types;
+                for i = 1, #skillTypes do
+                    local name = skillTypes[i].name;
+                    MainPanelSTIK.Skills[name].Points.RecalcPoints();
+                end;
                 playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
             end
         );
@@ -100,6 +107,12 @@ STIKRegister = {
                 panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
                 playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                 MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
+
+                local skillTypes = STIKConstants.skillTypes.types;
+                for i = 1, #skillTypes do
+                    local name = skillTypes[i].name;
+                    MainPanelSTIK.Skills[name].Points.RecalcPoints();
+                end;
                 playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
             end
         );
@@ -116,6 +129,12 @@ STIKRegister = {
                 panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
                 playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                 MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
+
+                local skillTypes = STIKConstants.skillTypes.types;
+                for i = 1, #skillTypes do
+                    local name = skillTypes[i].name;
+                    MainPanelSTIK.Skills[name].Points.RecalcPoints();
+                end;
                 playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
             end
         );
@@ -259,4 +278,70 @@ STIKRegister = {
 
         return button;
     end,
+    skillType = function (settings)
+        local function setSkillView(view)
+            view:SetSize(STIKConstants.smallButton.width, STIKConstants.smallButton.height);
+            view:SetPoint("CENTER", settings.views.parent, "TOP", settings.coords.x, -10 + settings.coords.y);
+            view:RegisterForClicks("AnyUp");
+            view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+            view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+            view:Show()
+        end
+
+        local function setSkillScripts(view)
+            view:SetScript("OnEnter", gui.showPanelHint);
+            view:SetScript("OnLeave", gui.hidePanelHint);
+            view:SetScript("OnClick",
+                function()
+                    local wasVisible = settings.views.main.Skills[settings.name]:IsVisible();
+
+                    for i = 1, #STIKConstants.skills do
+                        local category = STIKConstants.skills[i];
+                        settings.views.main.Skills[category.name]:Hide();
+                    end;
+
+                    if (not wasVisible) then settings.views.main.Skills[settings.name]:Show(); end;
+                end
+            );
+        end
+
+        local skillTypeButton = CreateFrame("Button", "skillTypeButton", settings.views.parent, "SecureHandlerClickTemplate");
+        skillTypeButton.hint = settings.hint;
+        setSkillView(skillTypeButton);
+        setSkillScripts(skillTypeButton);
+
+        return skillTypeButton;
+    end,
+    skill = function (settings, playerContext)
+        local skills = playerContext.skills;
+        if (not skills[settings.category]) then skills[settings.category] = { }; end;
+        if (not skills[settings.category][settings.name]) then skills[settings.category][settings.name] = 0; end;
+
+        local panel = gui.createLine({
+            parent = settings.views.parent,
+            content = STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name],
+            coords = settings.coords,
+            direction = { x = "LEFT", y = "TOP" }
+        });
+
+        local AddButton = gui.createDefaultButton({
+            parent = settings.views.parent, content = "+",
+            coords = { x = 55, y = settings.coords.y },
+            direction = { x = "LEFT", y = "TOP" }
+        });
+
+        local RemoveButton = gui.createDefaultButton({
+            parent = settings.views.parent, content = "-",
+            coords = { x = 75, y = settings.coords.y },
+            direction = { x = "LEFT", y = "TOP" }
+        });
+
+        local ClearButton = gui.createDefaultButton({
+            parent = settings.views.parent, content = "0",
+            coords = { x = 95, y = settings.coords.y },
+            direction = { x = "LEFT", y = "TOP" }
+        });
+
+        return panel;
+    end;
 };
