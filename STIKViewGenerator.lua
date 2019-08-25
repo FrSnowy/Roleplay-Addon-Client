@@ -637,15 +637,13 @@ local skillsPanelViewGenerator = function (progress, armor, stats, flags, params
 
                     local getSpentedPoints = function()
                         local categoryName = category.name;
-                        local contextGroup = context.skills or { };
-                        local contextSkills = contextGroup[categoryName] or { };
-                        local pointSumm = 0;
+                        local skillType = context.skills[categoryName];
+                        local spented = 0;
 
-                        for i = 1, #contextSkills do
-                            pointSumm = pointSumm + contextSkills[i];
-                        end;
-
-                        return pointSumm;
+                        for _, skill in pairs(skillType) do
+                            spented = spented + skill;
+                        end
+                        return spented;
                     end;
 
                     local allPoints = getDefaultPoints();
@@ -668,6 +666,8 @@ local skillsPanelViewGenerator = function (progress, armor, stats, flags, params
                 available.RecalcPoints = function()
                     available:SetText(STIKConstants.texts.skillMeta.avaliable..": "..getActualPonits());
                 end;
+
+                available.GetAvailablePoints = getActualPonits;
                 return available;
             end;
 

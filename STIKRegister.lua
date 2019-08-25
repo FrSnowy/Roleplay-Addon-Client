@@ -330,17 +330,48 @@ STIKRegister = {
             direction = { x = "LEFT", y = "TOP" }
         });
 
+        AddButton:SetScript("OnClick",
+            function()
+                local havePoints = MainPanelSTIK.Skills[settings.category].Points.GetAvailablePoints();
+                if (havePoints <= 0) then return; end;
+                skills[settings.category][settings.name] = skills[settings.category][settings.name] + 1;
+                panel:SetText(STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name]);
+                MainPanelSTIK.Skills[settings.category].Points.RecalcPoints();
+                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+            end
+        );
+
         local RemoveButton = gui.createDefaultButton({
             parent = settings.views.parent, content = "-",
             coords = { x = 75, y = settings.coords.y },
             direction = { x = "LEFT", y = "TOP" }
         });
 
+        RemoveButton:SetScript("OnClick",
+            function()
+                local havePoints = MainPanelSTIK.Skills[settings.category].Points.GetAvailablePoints();
+                if (skills[settings.category][settings.name] <= 0) then return; end;
+                skills[settings.category][settings.name] = skills[settings.category][settings.name] - 1;
+                panel:SetText(STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name]);
+                MainPanelSTIK.Skills[settings.category].Points.RecalcPoints();
+                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+            end
+        );
+
         local ClearButton = gui.createDefaultButton({
             parent = settings.views.parent, content = "0",
             coords = { x = 95, y = settings.coords.y },
             direction = { x = "LEFT", y = "TOP" }
         });
+
+        ClearButton:SetScript("OnClick",
+            function()
+                skills[settings.category][settings.name] = 0
+                panel:SetText(STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name]);
+                MainPanelSTIK.Skills[settings.category].Points.RecalcPoints();
+                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+            end
+        );
 
         return panel;
     end;

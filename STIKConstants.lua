@@ -324,9 +324,9 @@ STIKConstants = {
                 }
             },
             points = {
-                { value = 2, from = { 'str', 'ag', 'mg' } },
-                { value = 4, from = { 'snp', 'cntr', 'will' } },
-                { value = 8, from = { 'body', 'ptnc' } },
+                { value = 1.25, from = { 'str', 'ag', 'mg' } },
+                { value = 2.5, from = { 'snp', 'cntr', 'will' } },
+                { value = 4.75, from = { 'body', 'ptnc' } },
             },
         },
         {
@@ -358,9 +358,9 @@ STIKConstants = {
                 },
             },
             points = {
-                { value = 2, from = { 'body', 'will', 'ag' } },
-                { value = 4, from = { 'str', 'ptnc' } },
-                { value = 8, from = { 'cntr' } }
+                { value = 1.25, from = { 'body', 'will', 'ag' } },
+                { value = 2.5, from = { 'str', 'ptnc' } },
+                { value = 4.75, from = { 'cntr' } }
             },
         },
         {
@@ -384,8 +384,8 @@ STIKConstants = {
                 },
             },
             points = {
-                { value = 2, from = { 'mg', 'cntr' } },
-                { value = 4, from = { 'ag', 'will' } },
+                { value = 1.25, from = { 'mg', 'cntr' } },
+                { value = 2.5, from = { 'ag', 'will' } },
             },
         },
     },
