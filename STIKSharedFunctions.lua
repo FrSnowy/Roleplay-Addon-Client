@@ -70,6 +70,40 @@ STIKSharedFunctions = {
         StatPanel.Avl:SetText(STIKConstants.texts.statsMeta.avaliable..": "..params.points);
         return stat;
     end,
+    modifySkill = function (job, category, name, textView, playerContext)
+        local skills = playerContext.skills;
+        local flags = playerContext.flags;
+        local points = MainPanelSTIK.Skills[category].Points.GetAvailablePoints();
+        local progress = playerContext.progress;
+
+        local isInBattle = not(flags.isInBattle == 0);
+        
+        if (isInBattle) then
+            print(STIKConstants.texts.err.battle);
+            return stat;
+        end;
+
+        local currentValue = skills[category][name];
+
+        local jobConnector = {
+            [STIKConstants.texts.jobs.add] = function()
+                if (currentValue < 40 + 5 * (progress.lvl - 1) and points > 0) then return currentValue + 1;
+                else return currentValue; end;
+            end,
+            [STIKConstants.texts.jobs.remove] = function()
+                if (currentValue > 0) then return currentValue - 1;
+                else return 0; end;
+            end,
+            [STIKConstants.texts.jobs.clear] = function()
+                return 0;
+            end,
+        };
+
+        currentValue = jobConnector[job]();
+        skills[category][name] = currentValue;
+        textView:SetText(STIKConstants.texts.skills[name]..": "..skills[category][name]);
+        MainPanelSTIK.Skills[category].Points.RecalcPoints();
+    end,
     preloadChecks = function(context)
         if (context == nil) then return 'NO_PLOT_SELECTED' end;
 

@@ -203,12 +203,13 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
             end;
         end;
 
-        local createDicePanelElements = function (dicePanel, skills)
+        local createDicePanelElements = function (dicePanel, skills, category)
             local sortedSkills = STIKSortTable(skills);
             for i = 1, #sortedSkills do
                 local skill = sortedSkills[i];
                 STIKRegister.diceElement({
                     name = skill.name,
+                    category = category,
                     hint = STIKConstants.texts.skills[skill.name],
                     image = skill.img,
                     views = { parent = dicePanel },
@@ -218,34 +219,60 @@ local dicePanelViewGenerator = function (progress, armor, stats, flags, params, 
         end;
 
         local registerDicePanels = function (diceCategoryPanel)
-            local createDicePanels = function ()
-                local skillCategories = STIKSortTable(STIKConstants.skills);
+            local skillCategories = STIKSortTable(STIKConstants.skills);
     
-                for i = 1, #skillCategories do
-                    local category = skillCategories[i];
-    
-                    local dicePanel = gui.createDefaultFrame({
-                        parent = diceCategoryPanel,
-                        title = STIKConstants.texts.skillTypes[category.name],
-                        size = { width = 114, height = 64 + 36 * #category.skills },
-                        aligment = { x = "LEFT", y = "LEFT" },
-                        point = { x = 80, y = 0 },
-                    });
-    
-                    dicePanel:Hide();
-                    createDicePanelElements(dicePanel, category.skills);
-                    --categoryPanel.Points = createSkillPoints(categoryPanel, category);
-                    mainPanel.DicePanels[category.name] = dicePanel;
-                end;
-            end;
+            for i = 1, #skillCategories do
+                local category = skillCategories[i];
 
-            createDicePanels();
+                local dicePanel = gui.createDefaultFrame({
+                    parent = diceCategoryPanel,
+                    title = STIKConstants.texts.skillTypes[category.name],
+                    size = { width = 114, height = 64 + 36 * #category.skills },
+                    aligment = { x = "LEFT", y = "LEFT" },
+                    point = { x = 80, y = 0 },
+                });
+
+                dicePanel:Hide();
+                createDicePanelElements(dicePanel, category.skills, category.name);
+                mainPanel.DicePanels[category.name] = dicePanel;
+            end;
+        end;
+
+        local registerRollPanel = function (diceCategoriesPanel)
+            local rollButtons = STIKConstants.rollSizes;
+            local panel = gui.createDefaultFrame({
+                parent = diceCategoriesPanel,
+                title = '',
+                size = { width = #rollButtons * 61, height = 64 },
+                aligment = { x = "LEFT", y = "LEFT" },
+                point = { x = 180, y = 0 },
+            });
+
+            panel:Hide();
+
+            return panel;
+        end;
+
+        local registerRolls = function (rollPanel)
+            local rollSizesElements = STIKSortTable(STIKConstants.rollSizes);
+            for i = 1, #rollSizesElements do
+                local rollInfo = rollSizesElements[i];
+                STIKRegister.roll({
+                    parent = rollPanel,
+                    coords = { x = 40 + 54 * (i - 1), y = 12 },
+                    dice = rollInfo,
+                }, STIKSharedFunctions.getPlayerContext(playerInfo))
+            end;
         end;
 
         local diceCategoriesPanel = createDiceCategoriesPanel();
         registerSkillTypes(diceCategoriesPanel);
         registerDicePanels(diceCategoriesPanel);
         STIKPanelLinks.Roll = diceCategoriesPanel;
+
+        local rollPanel = registerRollPanel(diceCategoriesPanel);
+        STIKPanelLinks.RollPanel = rollPanel;
+        registerRolls(rollPanel);
         return diceCategoriesPanel;
     end;
 

@@ -209,25 +209,85 @@ STIKConstants = {
     },
     armorPenalty = {
         head = {
-            nothing = { str = 0, ag = 0, snp = 0.03, mg = 0.03, body = -0.05, will = -0.05, ptnc = 0, luck = 0 },
-            cloth = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
-            leather = { str = 0, ag = -0.03, snp = -0.05, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
-            mail = { str = 0, ag = -0.05, snp = -0.1,  mg = 0, body = 0.05, will = 0, ptnc = 0, luck = 0 },
-            plate = { str = 0, ag = -0.07, snp = -0.2, mg = 0, body = 0.1, will = 0, ptnc = 0, luck = 0 },
+            nothing = {
+                fight_str = 0, fight_ag = 0, shooting = 0.1, magica = 0.1, shadows = 0.1, holy = 0.1, elems = 0, nature = 0,
+                melee_weapon = 0.1, range_weapon = 0.1, controll = -0.1, armor = 0.1, hacking = 0.2, stealth = 0.1,
+                talking = 0.1, stealing = 0.1, hearing = 0.2, profession = 0.1,
+            },
+            cloth = {
+                fight_str = 0, fight_ag = 0, shooting = 0.05, magica = 0.05, shadows = 0.05, holy = 0.05, elems = 0.2, nature = 0.1,
+                melee_weapon = 0.05, range_weapon = 0.05, controll = -0.05, armor = 0.05, hacking = 0.1, stealth = 0.05,
+                talking = 0.05, stealing = 0.1, hearing = 0.1, profession = 0.05,
+            },
+            leather = {
+                fight_str = 0, fight_ag = 0, shooting = 0, magica = 0, shadows = 0, holy = 0, elems = 0.1, nature = 0.05,
+                melee_weapon = -0.05, range_weapon = -0.05, controll = 0, armor = 0, hacking = 0, stealth = 0,
+                talking = 0, stealing = 0, hearing = 0, profession = 0,
+            },
+            mail = {
+                fight_str = 0, fight_ag = -0.05, shooting = -0.1, magica = -0.1, shadows = -0.15, holy = 0.05, elems = 0, nature = 0,
+                melee_weapon = -0.05, range_weapon = -0.1, controll = 0.05, armor = -0.05, hacking = -0.05, stealth = -0.05,
+                talking = 0, stealing = -0.05, hearing = -0.1, profession = 0,
+            },
+            plate = {
+                fight_str = 0, fight_ag = -0.1, shooting = -0.2, magica = -0.2, shadows = -0.15, holy = 0, elems = -0.2, nature = -0.3,
+                melee_weapon = -0.1, range_weapon = -0.2, controll = 0.1, armor = -0.2, hacking = -0.2, stealth = -0.1,
+                talking = -0.1, stealing = -0.1, hearing = -0.3, profession = -0.2,
+            },
         },
         body = {
-            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, will = 0, ptnc = 0, luck = 0 },
-            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, will = 0, ptnc = 0, luck = 0 },
-            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
-            mail = { str = 0.05, ag = -0.05, snp = -0.05, mg = -0.02, body = 0.05, will = 0, ptnc = 0, luck = 0 },
-            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.2, will = 0, ptnc = 0, luck = 0 },
+            nothing = {
+                fight_str = -0.05, fight_ag = 0.1, shooting = 0.1, magica = 0.1, shadows = 0.1, holy = -0.2, elems = -0.05, nature = 0.1,
+                melee_weapon = 0.05, range_weapon = 0.05, controll = -0.1, armor = 0.2, hacking = 0.2, stealth = 0.2,
+                talking = -0.3, stealing = 0.2, hearing = 0, profession = 0.05
+            },
+            cloth = {
+                fight_str = -0.05, fight_ag = 0.1, shooting = 0.05, magica = 0.05, shadows = 0.1, holy = 0, elems = 0.1, nature = 0.1,
+                melee_weapon = 0, range_weapon = 0, controll = -0.05, armor = 0.1, hacking = 0.1, stealth = 0.1,
+                talking = 0, stealing = 0.1, hearing = 0, profession = 0,
+            },
+            leather = {
+                fight_str = 0, fight_ag = 0, shooting = 0, magica = 0, shadows = 0.05, holy = 0.05, elems = 0.05, nature = 0.05,
+                melee_weapon = 0, range_weapon = 0, controll = 0, armor = 0, hacking = 0, stealth = 0,
+                talking = 0, stealing = 0, hearing = 0, profession = -0.05,
+            },
+            mail = {
+                fight_str = 0.05, fight_ag = -0.12, shooting = -0.1, magica = -0.1, shadows = 0, holy = 0.02, elems = 0, nature = -0.05,
+                melee_weapon = -0.05, range_weapon = -0.1, controll = 0.05, armor = -0.1, hacking = -0.1, stealth = -0.05,
+                talking = 0.02, stealing = -0.1, hearing = 0, profession = -0.05,
+            },
+            plate = {
+                fight_str = 0.1, fight_ag = -0.25, shooting = -0.2, magica = -0.2, shadows = -0.1, holy = 0, elems = -0.05, nature = -0.2,
+                melee_weapon = -0.1, range_weapon = -0.15, controll = 0.1, armor = -0.2, hacking = -0.2, stealth = -0.1,
+                talking = 0.05, stealing = -0.2, hearing = 0, profession = -0.05,
+            },
         },
         legs = {
-            nothing = { str = 0, ag = 0.1, snp = 0, mg = 0.1, body = -0.3, will = 0, ptnc = 0, luck = 0 },
-            cloth = { str = 0, ag = 0.05, snp = 0, mg = 0, body = -0.1, will = 0, ptnc = 0, luck = 0 },
-            leather = { str = 0, ag = 0, snp = 0, mg = 0, body = 0, will = 0, ptnc = 0, luck = 0 },
-            mail = { str = 0.05, ag = -0.05, snp = 0, mg = -0.02, body = 0.05, will = 0, ptnc = 0, luck = 0 },
-            plate = { str = 0.1, ag = -0.2, snp = -0.1, mg = -0.05, body = 0.1, will = 0, ptnc = 0, luck = 0 },
+            nothing = {
+                fight_str = -0.05, fight_ag = 0.1, shooting = 0.1, magica = 0.1, shadows = 0, holy = -0.2, elems = -0.1, nature = 0.1,
+                melee_weapon = 0, range_weapon = 0, controll = -0.3, armor = 0.3, hacking = 0, stealth = 0.2,
+                talking = -0.5, stealing = 0.1, hearing = 0, profession = 0.05,
+            },
+            cloth = {
+                fight_str = -0.05, fight_ag = 0.1, shooting = 0.05, magica = 0.05, shadows = 0, holy = 0, elems = 0.05, nature = 0.1,
+                melee_weapon = 0, range_weapon = 0, controll = -0.05, armor = 0.1, hacking = 0, stealth = 0.1,
+                talking = 0, stealing = 0, hearing = 0, profession = 0,
+            },
+            leather = {
+                fight_str = 0, fight_ag = 0.05, shooting = 0, magica = 0, shadows = 0.05, holy = 0.05, elems = 0.1, nature = 0.05,
+                melee_weapon = 0, range_weapon = 0, controll = 0, armor = 0, hacking = 0, stealth = 0,
+                talking = 0, stealing = 0, hearing = 0, profession = 0,
+            },
+            mail = {
+                fight_str = 0.05, fight_ag = -0.12, shooting = -0.05, magica = -0.05, shadows = 0, holy = 0.02, elems = 0, nature = -0.05,
+                melee_weapon = 0, range_weapon = 0, controll = 0.05, armor = -0.05, hacking = 0, stealth = -0.07,
+                talking = 0.02, stealing = -0.05, hearing = 0, profession = -0.05,
+            },
+            plate = {
+                fight_str = 0.1, fight_ag = -0.25, shooting = -0.1, magica = -0.1, shadows = -0.1, holy = 0, elems = -0.05, nature = -0.2,
+                melee_weapon = 0, range_weapon = 0, controll = 0.1, armor = -0.1, hacking = 0, stealth = -0.2,
+                talking = 0.05, stealing = -0.1, hearing = 0, profession = -0.1,
+            },
         },
     },
     settingsPanelElements = {
@@ -294,89 +354,65 @@ STIKConstants = {
                     name = 'fight_str',
                     img = 'sword',
                     stats = { main = 'str', sub = 'body', third = 'snp' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'melee_weapon', reverse = false },
-                        { block = 'armor', reverse = false },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'melee_weapon', normal = 30 },
                     },
                 },
                 {
                     name = 'fight_ag',
                     img = 'dagger',
                     stats = { main = 'ag', sub = 'snp', third = 'str' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'melee_weapon', reverse = false },
-                        { block = 'armor', reverse = false },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'melee_weapon', normal = 40 },
                     },
                 },
                 {
                     name = 'shooting',
                     img = 'bow',
                     stats = { main = 'snp', sub = 'cntr', third = 'ptnc' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'range_weapon', reverse = false },
-                        { block = 'armor', reverse = false },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'range_weapon', normal = 30 },
                     },
                 },
                 {
                     name = 'magica',
                     img = 'magic',
                     stats = { main = 'mg', sub = 'cntr', third = 'will' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll' },
-                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
-                        { block = 'armor', reverse = false },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'controll', normal = 20 },
+                        { block = 'skills', category = 'battle', name = 'nature', normal = 1, reverse = true },
                     },
                 },
                 {
                     name = 'shadows',
                     img = 'warlock',
                     stats = { main = 'mg', sub = 'cntr', third = 'body' },
-                    penalty = {
-                        { block = 'stats', name = 'ptnc', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'elems', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
-                        { block = 'armor', reverse = false },
-                    },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'controll', normal = 1, reverse = true },
+                        { block = 'skills', category = 'battle', name = 'holy', normal = 1, reverse = true },
+                    }
                 },
                 {
                     name = 'holy',
                     img = 'holy',
                     stats = { main = 'will', sub = 'ptnc', third = 'cntr' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll' },
-                        { block = 'skills', category = 'battle', name = 'magica', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'shadows', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'elems', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
-                        { block = 'armor', reverse = false },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'controll', normal = 25 },
+                        { block = 'skills', category = 'battle', name = 'shadows', normal = 1, reverse = true },
                     },
                 },
                 {
                     name = 'elems',
                     img = 'elements',
                     stats = { main = 'will', sub = 'cntr', third = 'ptnc' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
-                        { block = 'skills', category = 'battle', name = 'magica', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'shadows', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
-                        { block = 'armor', reverse = false },
-                    },
                 },
                 {
                     name = 'nature',
                     img = 'nature',
                     stats = { main = 'ptnc', sub = 'cntr', third = 'will' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
-                        { block = 'skills', category = 'battle', name = 'magica', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'shadows', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
-                        { block = 'skills', category = 'battle', name = 'elems', reverse = true },
-                        { block = 'armor', reverse = false },
+                    modifier = {
+                        { block = 'skills', category = 'passive', name = 'controll', normal = 20 },
+                        { block = 'skills', category = 'battle', name = 'magica', normal = 1, reverse = true },
                     },
                 }
             },
@@ -409,29 +445,11 @@ STIKConstants = {
                     img = 'armor',
                     stats = { main = 'body', sub = 'str', third = 'ag' },
                 },
-                {
-                    name = 'hacking',
-                    img = 'lock',
-                    stats = { main = 'ag', sub = 'cntr', third = 'mg' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
-                        { block = 'armor', reverse = false },
-                    },
-                },
-                {
-                    name = 'stealth',
-                    img = 'ninja',
-                    stats = { main = 'mg', sub = 'ag', third = 'ptnc' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
-                        { block = 'armor', reverse = false },
-                    },
-                },
             },
             points = {
-                { value = 1.25, from = { 'body', 'will', 'ag' } },
-                { value = 2.5, from = { 'str', 'ptnc' } },
-                { value = 4.75, from = { 'cntr' } }
+                { value = 1.25, from = { 'body', 'ptnc', 'cntr' } },
+                { value = 2.5, from = { 'str', 'mg', 'ag' } },
+                { value = 4.75, from = { 'will', 'snp' } }
             },
         },
         {
@@ -446,31 +464,31 @@ STIKConstants = {
                     name = 'stealing',
                     img = 'stealing',
                     stats = { main = 'ag', sub = 'cntr', third = 'snp' },
-                    penalty = {
-                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
-                        { block = 'armor', reverse = false },
-                    }
+                },
+                {
+                    name = 'hacking',
+                    img = 'lock',
+                    stats = { main = 'ag', sub = 'cntr', third = 'mg' },
+                },
+                {
+                    name = 'stealth',
+                    img = 'ninja',
+                    stats = { main = 'mg', sub = 'ag', third = 'ptnc' },
                 },
                 {
                     name = 'hearing',
                     img = 'hearing',
                     stats = { main = 'cntr', sub = 'mg', third = 'ptnc' },
-                    penalty = {
-                        { block = 'armor', reverse = false },
-                    }
                 },
                 {
                     name = 'profession',
                     img = 'craft',
                     stats = { main = 'mg', sub ='ptnc', third = 'cntr' },
-                    penalty = {
-                        { block = 'armor', reverse = false },
-                    }
                 },
             },
             points = {
                 { value = 1.25, from = { 'mg', 'cntr' } },
-                { value = 2.5, from = { 'ag', 'will' } },
+                { value = 2.5, from = { 'ag', 'will', 'ptnc' } },
             },
         },
     },

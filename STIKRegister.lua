@@ -49,6 +49,7 @@ STIKRegister = {
                     end;
 
                     if (not wasVisible) then settings.views.main.DicePanels[settings.name]:Show(); end;
+                    STIKPanelLinks.RollPanel:Hide();
                 end
             );
         end;
@@ -73,6 +74,18 @@ STIKRegister = {
         local function setElementScrips(view)
             view:SetScript("OnEnter", gui.showPanelHint);
             view:SetScript("OnLeave", gui.hidePanelHint);
+            view:SetScript("OnClick", function()
+                STIKPanelLinks.RollPanel:SetPoint("TOPLEFT", settings.views.parent, "TOPLEFT", 100, settings.coords.y + 20)
+                if (settings.name == STIKPanelLinks.RollPanel.Name and STIKPanelLinks.RollPanel:IsVisible()) then
+                    STIKPanelLinks.RollPanel:Hide();
+                    STIKPanelLinks.RollPanel.Name = nil;
+                    STIKPanelLinks.RollPanel.Category = nil;
+                else
+                    STIKPanelLinks.RollPanel.Name = settings.name;
+                    STIKPanelLinks.RollPanel.Category = settings.category;
+                    STIKPanelLinks.RollPanel:Show();
+                end;
+            end)
         end;
 
         local diceElement = CreateFrame("Button", "diceElementButton", settings.views.parent, "SecureHandlerClickTemplate");
@@ -177,47 +190,159 @@ STIKRegister = {
         local function setRollScript(view)
             view:SetScript("OnClick",
                 function()
-                    local usingStat = menu.stat;
-                    local diceSize = settings.dice.size;
-                    if (usingStat == 'luck') then return RandomRoll(0, diceSize); end;
+                    --[[
+                        local usingStat = menu.stat;
+                        local diceSize = settings.dice.size;
+                        if (usingStat == 'luck') then return RandomRoll(0, diceSize); end;
 
-                    local penaltyOfDice = settings.dice.penalty;
-                    local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
-                    if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
+                        local penaltyOfDice = settings.dice.penalty;
+                        local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
+                        if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
 
-                    local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
+                        local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
 
-                    local penaltyByArmor = {
-                        head = -STIKConstants.armorPenalty.head[armor.head][usingStat],
-                        body = -STIKConstants.armorPenalty.body[armor.body][usingStat],
-                        legs = -STIKConstants.armorPenalty.legs[armor.legs][usingStat],
-                    };
+                        local penaltyByArmor = {
+                            head = -STIKConstants.armorPenalty.head[armor.head][usingStat],
+                            body = -STIKConstants.armorPenalty.body[armor.body][usingStat],
+                            legs = -STIKConstants.armorPenalty.legs[armor.legs][usingStat],
+                        };
 
-                    local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
-                    local penaltyOfArmor = penaltyByArmor.head + penaltyByArmor.body + penaltyByArmor.legs;
+                        local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
+                        local penaltyOfArmor = penaltyByArmor.head + penaltyByArmor.body + penaltyByArmor.legs;
 
-                    local minRoll = rollWithoutArmor - math.ceil(rollWithoutArmor * penaltyOfArmor);
-                    local maxRoll = diceSize + rollWithoutArmor;
-                    maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
+                        local minRoll = rollWithoutArmor - math.ceil(rollWithoutArmor * penaltyOfArmor);
+                        local maxRoll = diceSize + rollWithoutArmor;
+                        maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
 
-                    if (maxRoll == 0) then maxRoll = 1; end;
-                    if (playerInfo.settings.showRollInfo) then
-                        print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
-                        print('Приведенный навык: '..math.ceil((diceSize * stats[usingStat])/100));
-                        print('Модификатор от размера куба: '..string.sub(1 / penaltyOfDice, 0, 5));
-                        print('Модификатор от ОЗ: '..modiferOfHealth);
-                        print('Бросок модифицированного навыка (без учета брони): '..rollWithoutArmor);
-                        print('Дополнительный модификатор от брони: '..penaltyOfArmor);
-                        print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
-                        print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
-                    else
-                        print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                        if (maxRoll == 0) then maxRoll = 1; end;
+                        if (playerInfo.settings.showRollInfo) then
+                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                            print('Приведенный навык: '..math.ceil((diceSize * stats[usingStat])/100));
+                            print('Модификатор от размера куба: '..string.sub(1 / penaltyOfDice, 0, 5));
+                            print('Модификатор от ОЗ: '..modiferOfHealth);
+                            print('Бросок модифицированного навыка (без учета брони): '..rollWithoutArmor);
+                            print('Дополнительный модификатор от брони: '..penaltyOfArmor);
+                            print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
+                            print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
+                        else
+                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
+                        end;
+
+                        if (playerInfo.settings.isEventStarted) then
+                            SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..STIKConstants.texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
+                        end;
+                        RandomRoll(minRoll, maxRoll);
+                    ]]--
+                    local categoryName = STIKPanelLinks.RollPanel.Category;
+                    local skillName = STIKPanelLinks.RollPanel.Name;
+                    local size = settings.dice.size;
+
+                    local getSkill = function(category, name)
+                        local skills = STIKSortTable(STIKConstants.skills);
+
+                        local getCategory = function(category)
+                            local foundedCategory = nil;
+                            for i = 1, #skills do
+                                local currentCategory = skills[i];
+                                if (currentCategory.name == category) then foundedCategory = currentCategory; end;
+                            end;
+                            return foundedCategory;
+                        end;
+
+                        local category = getCategory(category);
+                        local foundedSkill = nil;
+
+                        for i = 1, #category.skills do
+                            local currentSkill = category.skills[i];
+                            if (currentSkill.name == name) then foundedSkill = currentSkill; end;
+                        end;
+                        return foundedSkill;
                     end;
 
-                    if (playerInfo.settings.isEventStarted) then
-                        SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..STIKConstants.texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
+                    local skill = getSkill(categoryName, skillName);
+
+                    local getClearSkillValue = function()
+                        return playerContext.skills[categoryName][skillName];
                     end;
-                    RandomRoll(minRoll, maxRoll);
+
+                    local getSkillStatBonuses = function(skillValue, skill)
+                        local stats = {
+                            main = skill.stats.main,
+                            sub = skill.stats.sub,
+                            third = skill.stats.third,
+                        };
+
+                        local statValues = {
+                            main = playerContext.stats[stats.main],
+                            sub = playerContext.stats[stats.sub],
+                            third = playerContext.stats[stats.third],
+                        };
+
+                        local bonuceFromStats = {
+                            main = math.floor(statValues.main / 5),
+                            sub = math.floor(statValues.sub / 10),
+                            third = math.floor(statValues.third / 15),
+                        };
+
+                        local resultBonuce = bonuceFromStats.main + bonuceFromStats.sub + bonuceFromStats.third;
+                        return resultBonuce;
+                    end;
+
+                    local getSkillModifierBonuses = function(skillValue, skill)
+                        if (not skill.modifier) then return skillValue; end;
+
+                        local getSkillModifier = function(modifier)
+                            local normal = modifier.normal;
+                            local skillValue = playerContext.skills[modifier.category][modifier.name];
+                            if (modifier.reverse) then
+                                if (skillValue > normal) then
+                                    local penalty = (skillValue/normal) / 100;
+                                    return -penalty;
+                                else
+                                    return 0;
+                                end;
+                            else
+                                if (skillValue < normal) then
+                                    local penalty = 1 - skillValue/normal;
+                                    return -penalty;
+                                elseif (skillValue > normal) then
+                                    local bonus = skillValue/normal - 1;
+                                    return bonus / 5;
+                                else
+                                    return 0;
+                                end;
+                            end;
+                        end;
+
+                        local modifiers = STIKSortTable(skill.modifier);
+                        for i = 1, #modifiers do
+                            local modifier = modifiers[i];
+                            local modifierValue = 0;
+                            if (modifier.block == 'skills') then
+                                modifierValue = getSkillModifier(modifier);
+                            end;
+
+                            skillValue = skillValue + (skillValue * modifierValue);
+                        end;
+                        return math.floor(skillValue);
+                    end;
+
+                    local getRollSize = function(modifier)
+                        local toDiceSize = function(num, diceSize)
+                            return math.ceil((num * diceSize) / 100);
+                        end;
+                        return { min = toDiceSize(modifier, size), max = size + toDiceSize(modifier, size) };
+                    end;
+
+                    local skillValue = getClearSkillValue();
+                    local bonuseFromSkill = getSkillStatBonuses(skillValue, skill);
+                    local skillWithBonuses = skillValue + bonuseFromSkill;
+                    local roll = getRollSize(skillWithBonuses, size);
+                    roll.min = getSkillModifierBonuses(roll.min, skill);
+                    roll.max = getSkillModifierBonuses(roll.max, skill);
+
+                    if (roll.max == 0) then roll.max = 1; end;
+                    RandomRoll(roll.min, roll.max);
                 end
             );
         end
@@ -350,11 +475,7 @@ STIKRegister = {
 
         AddButton:SetScript("OnClick",
             function()
-                local havePoints = MainPanelSTIK.Skills[settings.category].Points.GetAvailablePoints();
-                if (havePoints <= 0) then return; end;
-                skills[settings.category][settings.name] = skills[settings.category][settings.name] + 1;
-                panel:SetText(STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name]);
-                MainPanelSTIK.Skills[settings.category].Points.RecalcPoints();
+                STIKSharedFunctions.modifySkill(STIKConstants.texts.jobs.add, settings.category, settings.name, panel, playerContext);
                 playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
             end
         );
@@ -367,11 +488,7 @@ STIKRegister = {
 
         RemoveButton:SetScript("OnClick",
             function()
-                local havePoints = MainPanelSTIK.Skills[settings.category].Points.GetAvailablePoints();
-                if (skills[settings.category][settings.name] <= 0) then return; end;
-                skills[settings.category][settings.name] = skills[settings.category][settings.name] - 1;
-                panel:SetText(STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name]);
-                MainPanelSTIK.Skills[settings.category].Points.RecalcPoints();
+                STIKSharedFunctions.modifySkill(STIKConstants.texts.jobs.remove, settings.category, settings.name, panel, playerContext);
                 playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
             end
         );
@@ -384,9 +501,7 @@ STIKRegister = {
 
         ClearButton:SetScript("OnClick",
             function()
-                skills[settings.category][settings.name] = 0
-                panel:SetText(STIKConstants.texts.skills[settings.name]..": "..skills[settings.category][settings.name]);
-                MainPanelSTIK.Skills[settings.category].Points.RecalcPoints();
+                STIKSharedFunctions.modifySkill(STIKConstants.texts.jobs.clear, settings.category, settings.name, panel, playerContext);
                 playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
             end
         );
