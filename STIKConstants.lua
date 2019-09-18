@@ -63,8 +63,8 @@ STIKConstants = {
             avaliable = "Доступно",
         },
         skills = {
-            fight_str = 'Силовой бой',
-            fight_ag = 'Ловкий бой',
+            fight_str = 'Силовое действие',
+            fight_ag = 'Ловкое действие',
             shooting = 'Стрельба',
             magica = 'Чаротворство',
             shadows = 'Колдовство',
@@ -80,7 +80,7 @@ STIKConstants = {
             talking = 'Убеждение',
             stealing = 'Воровство',
             hearing = 'Подслушивание',
-            profession = 'Профессии',
+            profession = 'Ремесло',
         },
     },
     mainPanelButtons = {
@@ -292,35 +292,92 @@ STIKConstants = {
             skills = {
                 {
                     name = 'fight_str',
+                    img = 'sword',
                     stats = { main = 'str', sub = 'body', third = 'snp' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'melee_weapon', reverse = false },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'fight_ag',
+                    img = 'dagger',
                     stats = { main = 'ag', sub = 'snp', third = 'str' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'melee_weapon', reverse = false },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'shooting',
+                    img = 'bow',
                     stats = { main = 'snp', sub = 'cntr', third = 'ptnc' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'range_weapon', reverse = false },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'magica',
+                    img = 'magic',
                     stats = { main = 'mg', sub = 'cntr', third = 'will' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll' },
+                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'shadows',
+                    img = 'warlock',
                     stats = { main = 'mg', sub = 'cntr', third = 'body' },
+                    penalty = {
+                        { block = 'stats', name = 'ptnc', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'elems', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'holy',
+                    img = 'holy',
                     stats = { main = 'will', sub = 'ptnc', third = 'cntr' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll' },
+                        { block = 'skills', category = 'battle', name = 'magica', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'shadows', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'elems', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'elems',
-                    stats = { main = 'will', sub = 'cntr', third = 'ptnc' }
+                    img = 'elements',
+                    stats = { main = 'will', sub = 'cntr', third = 'ptnc' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
+                        { block = 'skills', category = 'battle', name = 'magica', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'shadows', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'nature', reverse = true },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'nature',
-                    stats = { main = 'ptnc', sub = 'cntr', third = 'will' }
+                    img = 'nature',
+                    stats = { main = 'ptnc', sub = 'cntr', third = 'will' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
+                        { block = 'skills', category = 'battle', name = 'magica', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'shadows', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'holy', reverse = true },
+                        { block = 'skills', category = 'battle', name = 'elems', reverse = true },
+                        { block = 'armor', reverse = false },
+                    },
                 }
             },
             points = {
@@ -333,28 +390,42 @@ STIKConstants = {
             name = 'passive',
             skills = {
                 {
-                    name = 'armor',
-                    stats = { main = 'body', sub = 'str', third = 'ag' },
-                },
-                {
-                    name = 'controll',
-                    stats = { main = 'will', sub = 'mg', third = 'str' },
-                },
-                {
                     name = 'melee_weapon',
+                    img = 'weapon',
                     stats = { main = 'str', sub = 'mg', third = 'body' },
                 },
                 {
                     name = 'range_weapon',
+                    img = 'rifle',
                     stats = { main = 'ag', sub = 'snp', third = 'ptnc' },
                 },
                 {
+                    name = 'controll',
+                    img = 'fear',
+                    stats = { main = 'will', sub = 'body', third = 'str' },
+                },
+                {
+                    name = 'armor',
+                    img = 'armor',
+                    stats = { main = 'body', sub = 'str', third = 'ag' },
+                },
+                {
                     name = 'hacking',
-                    stats = { main = 'ag', sub = 'cntr', third = 'mg' }
+                    img = 'lock',
+                    stats = { main = 'ag', sub = 'cntr', third = 'mg' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
+                        { block = 'armor', reverse = false },
+                    },
                 },
                 {
                     name = 'stealth',
-                    stats = { main = 'mg', sub = 'ag', third = 'ptnc' }
+                    img = 'ninja',
+                    stats = { main = 'mg', sub = 'ag', third = 'ptnc' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
+                        { block = 'armor', reverse = false },
+                    },
                 },
             },
             points = {
@@ -368,19 +439,33 @@ STIKConstants = {
             skills = {
                 {
                     name = 'talking',
-                    stats = { main = 'mg', sub = 'will', third = 'str' },
+                    img = 'talking',
+                    stats = { main = 'mg', sub = 'will', third = 'body' },
                 },
                 {
                     name = 'stealing',
+                    img = 'stealing',
                     stats = { main = 'ag', sub = 'cntr', third = 'snp' },
+                    penalty = {
+                        { block = 'skills', category = 'passive', name = 'controll', reverse = false },
+                        { block = 'armor', reverse = false },
+                    }
                 },
                 {
                     name = 'hearing',
-                    stats = { main = 'cntr', sub = 'mg', third = 'snp' },
+                    img = 'hearing',
+                    stats = { main = 'cntr', sub = 'mg', third = 'ptnc' },
+                    penalty = {
+                        { block = 'armor', reverse = false },
+                    }
                 },
                 {
                     name = 'profession',
+                    img = 'craft',
                     stats = { main = 'mg', sub ='ptnc', third = 'cntr' },
+                    penalty = {
+                        { block = 'armor', reverse = false },
+                    }
                 },
             },
             points = {

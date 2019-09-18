@@ -26,42 +26,60 @@ STIKRegister = {
 
         return button;
     end,
-    dice = function (settings)
-        local function setDiceView(view)
+    diceCategory = function (settings)
+        local function setCategoryView(view)
             view:SetSize(STIKConstants.smallButton.width, STIKConstants.smallButton.height);
             view:SetPoint("CENTER", settings.views.parent, "TOP", settings.coords.x, -10 + settings.coords.y);
             view:RegisterForClicks("AnyUp");
             view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
             view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
             view:Show()
-        end
+        end;
 
-        local function setDiceScripts(view)
+        local function setCategoryScripts(view)
             view:SetScript("OnEnter", gui.showPanelHint);
             view:SetScript("OnLeave", gui.hidePanelHint);
             view:SetScript("OnClick",
                 function()
-                    local prevStat = settings.views.menu.stat;
-                    settings.views.menu.stat = view.stat;
+                    local wasVisible = settings.views.main.DicePanels[settings.name]:IsVisible();
 
-                    if ((prevStat == settings.views.menu.stat) and (settings.views.menu:IsVisible())) then 
-                        settings.views.menu:Hide();
-                    else
-                        local countOfDices = #STIKConstants.dicePanelElements;
-                        settings.views.menu:SetPoint("LEFT", settings.views.main, "TOPLEFT", 137, settings.coords.y);
-                        settings.views.menu:Show();
-                    end
+                    for i = 1, #STIKConstants.skills do
+                        local category = STIKConstants.skills[i];
+                        settings.views.main.DicePanels[category.name]:Hide();
+                    end;
+
+                    if (not wasVisible) then settings.views.main.DicePanels[settings.name]:Show(); end;
                 end
             );
-        end
+        end;
 
-        local rollButton = CreateFrame("Button", "diceButton", settings.views.parent, "SecureHandlerClickTemplate")
-        rollButton.hint = settings.hint;
-        rollButton.stat = settings.stat;
-        setDiceView(rollButton);
-        setDiceScripts(rollButton);
+        local diceCategory = CreateFrame("Button", "diceCategory", settings.views.parent, "SecureHandlerClickTemplate");
+        diceCategory.hint = settings.hint;
+        setCategoryView(diceCategory);
+        setCategoryScripts(diceCategory);
 
-        return rollButton;
+        return diceCategory;
+    end,
+    diceElement = function (settings)
+        local function setElementView(view)
+            view:SetSize(STIKConstants.smallButton.width, STIKConstants.smallButton.height);
+            view:SetPoint("CENTER", settings.views.parent, "TOP", settings.coords.x, -10 + settings.coords.y);
+            view:RegisterForClicks("AnyUp");
+            view:SetNormalTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+            view:SetHighlightTexture("Interface\\AddOns\\STIKSystem\\IMG\\"..settings.image..".blp");
+            view:Show()
+        end;
+
+        local function setElementScrips(view)
+            view:SetScript("OnEnter", gui.showPanelHint);
+            view:SetScript("OnLeave", gui.hidePanelHint);
+        end;
+
+        local diceElement = CreateFrame("Button", "diceElementButton", settings.views.parent, "SecureHandlerClickTemplate");
+        diceElement.hint = settings.hint;
+        setElementView(diceElement);
+        setElementScrips(diceElement);
+        return diceElement;
     end,
     stat = function (settings, playerContext)
         local stats = playerContext.stats;

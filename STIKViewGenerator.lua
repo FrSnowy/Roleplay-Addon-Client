@@ -173,63 +173,80 @@ end;
 
 local dicePanelViewGenerator = function (progress, armor, stats, flags, params, neededExpr)
     local generator = function(mainPanel)
-        local createDicePanel = function ()
-            local dicePanelElements = STIKConstants.dicePanelElements.elements;
-            local dicePanel = gui.createDefaultFrame({
-                parent = mainPanel,
+        local createDiceCategoriesPanel = function ()
+            local skillTypes = STIKConstants.skillTypes.types;
+
+            local diceCategoryPanel = gui.createDefaultFrame({
+                parent = mainPanel, 
                 title = STIKConstants.dicePanelElements.title,
-                size = { width = 80, height = 44 * #dicePanelElements },
+                size = { width = 90, height = 50 + 40 * #skillTypes },
                 aligment = { x = "LEFT", y = "LEFT" },
                 point = { x = 70, y = 0 }
             });
-            dicePanel:Hide();
-            return dicePanel;
+
+            diceCategoryPanel:Hide();
+            mainPanel.DicePanels = { };
+            return diceCategoryPanel;
         end;
 
-        local createDiceMenu = function (dicePanel)
-            local rollsCount = #STIKConstants.rollSizes;
-            dicePanel.Menu = gui.createDefaultFrame({
-                parent = dicePanel,
-                size = { width = 59 * rollsCount, height = 60 },
-                aligment = { x = "LEFT", y = "LEFT" },
-                point = { x = 0, y = 0 },
-            });
-
-            dicePanel.Menu:Hide();
-        end;
-
-        local registerRolls = function (dicePanel)
-            local rollSizesElements = STIKSortTable(STIKConstants.rollSizes);
-            for i = 1, #rollSizesElements do
-                local rollInfo = rollSizesElements[i];
-                STIKRegister.roll({
-                    parent = dicePanel.Menu,
-                    coords = { x = 36 + 54 * (i - 1), y = 12 },
-                    dice = rollInfo,
-                }, STIKSharedFunctions.getPlayerContext(playerInfo))
-            end;
-        end;
-
-        local registerDicesTypes = function (dicePanel)
-            local dicePanelElements = STIKSortTable(STIKConstants.dicePanelElements.elements);
-            for i = 1, #dicePanelElements do
-                local diceType = dicePanelElements[i];
-                STIKRegister.dice({
-                    views = { parent = dicePanel, main = MainPanelSTIK, menu = dicePanel.Menu },
+        local registerSkillTypes = function (diceCategoryPanel)
+            local skillTypes = STIKSortTable(STIKConstants.skillTypes.types);
+            for i = 1, #skillTypes do
+                local skillType = skillTypes[i];
+                STIKRegister.diceCategory({
+                    name = skillType.name,
+                    views = { parent = diceCategoryPanel, main = MainPanelSTIK },
                     coords = { x = 0, y = -i * (STIKConstants.smallButton.height + 10) - 15},
-                    image = diceType.image,
-                    hint = STIKConstants.texts.stats[diceType.name],
-                    stat = diceType.name,
+                    image = skillType.image,
+                    hint = STIKConstants.texts.skillTypes[skillType.name],
                 });
             end;
         end;
 
-        local dicePanel = createDicePanel();
-        createDiceMenu(dicePanel);
-        registerRolls(dicePanel);
-        registerDicesTypes(dicePanel);
-        STIKPanelLinks.Roll = dicePanel;
-        return dicePanel;
+        local createDicePanelElements = function (dicePanel, skills)
+            local sortedSkills = STIKSortTable(skills);
+            for i = 1, #sortedSkills do
+                local skill = sortedSkills[i];
+                STIKRegister.diceElement({
+                    name = skill.name,
+                    hint = STIKConstants.texts.skills[skill.name],
+                    image = skill.img,
+                    views = { parent = dicePanel },
+                    coords = { x = 0, y = -(16 + 36 * i) },
+                });
+            end;
+        end;
+
+        local registerDicePanels = function (diceCategoryPanel)
+            local createDicePanels = function ()
+                local skillCategories = STIKSortTable(STIKConstants.skills);
+    
+                for i = 1, #skillCategories do
+                    local category = skillCategories[i];
+    
+                    local dicePanel = gui.createDefaultFrame({
+                        parent = diceCategoryPanel,
+                        title = STIKConstants.texts.skillTypes[category.name],
+                        size = { width = 114, height = 64 + 36 * #category.skills },
+                        aligment = { x = "LEFT", y = "LEFT" },
+                        point = { x = 80, y = 0 },
+                    });
+    
+                    dicePanel:Hide();
+                    createDicePanelElements(dicePanel, category.skills);
+                    --categoryPanel.Points = createSkillPoints(categoryPanel, category);
+                    mainPanel.DicePanels[category.name] = dicePanel;
+                end;
+            end;
+
+            createDicePanels();
+        end;
+
+        local diceCategoriesPanel = createDiceCategoriesPanel();
+        registerSkillTypes(diceCategoriesPanel);
+        registerDicePanels(diceCategoriesPanel);
+        STIKPanelLinks.Roll = diceCategoriesPanel;
+        return diceCategoriesPanel;
     end;
 
     return generator;
