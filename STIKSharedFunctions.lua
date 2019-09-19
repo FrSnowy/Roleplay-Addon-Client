@@ -56,7 +56,9 @@ STIKSharedFunctions = {
     end,
     isHashOK = function (playerContext)
         local actualHash = STIKSharedFunctions.calculateHash(playerContext);
+        print(actualHash);
         local hashOfCtx = playerContext.hash;
+        print(hashOfCtx);
         return tonumber(actualHash) == tonumber(hashOfCtx);
     end,
     modifyStat = function (job, stat, playerContext)
@@ -132,7 +134,9 @@ STIKSharedFunctions = {
             message(STIKConstants.texts.err.hashIsWrong);
             context = {
                 hash = 1423957313,
-                stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
+                stats = { 
+                    str = 0, mg = 0, snp = 0, body = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0
+                },
                 skills = {
                     battle = {
                         nature = 0, shadows = 0, shooting = 0, elems = 0, magica = 0, fight_str = 0, holy = 0, fight_ag = 0,
