@@ -14,7 +14,7 @@ STIKSharedFunctions = {
             return playerInfo[playerInfo.settings.currentPlot];
         end;
     end,
-    statHash = function (playerContext)
+    statString = function (playerContext)
         local getDictionaryAsString = function (dict)
             local dictString = "";
             for key, value in pairs(dict) do
@@ -30,13 +30,34 @@ STIKSharedFunctions = {
         local progressString = getDictionaryAsString(STIKSortTable(playerContext.progress));
         local paramsString = getDictionaryAsString(STIKSortTable(playerContext.params));
     
-        local summaryString = statString..flagsString..armorString..progressString..paramsString;
-        return STIKStringHash(summaryString);
+        return statString..flagsString..armorString..progressString..paramsString;
+    end,
+    skillString = function(playerContext)
+        local getDictionaryAsString = function (dict)
+            local dictString = "";
+            for key, value in pairs(dict) do
+                dictString = dictString.."&"..key.."="..value
+            end;
+    
+            return dictString;
+        end;
+
+        local battleString = getDictionaryAsString(STIKSortTable(playerContext.skills.battle));
+        local passiveString = getDictionaryAsString(STIKSortTable(playerContext.skills.passive));
+        local socialString = getDictionaryAsString(STIKSortTable(playerContext.skills.social));
+
+        local summaryString = battleString..passiveString..socialString;
+        return summaryString;
+    end,
+    calculateHash = function(playerContext)
+        local strOfStats = STIKSharedFunctions.statString(playerContext);
+        local strOfSkills = STIKSharedFunctions.skillString(playerContext);
+        return STIKStringHash(strOfStats..strOfSkills);
     end,
     isHashOK = function (playerContext)
-        local hashofStats = STIKSharedFunctions.statHash(playerContext);
+        local actualHash = STIKSharedFunctions.calculateHash(playerContext);
         local hashOfCtx = playerContext.hash;
-        return tonumber(hashofStats) == tonumber(hashOfCtx);
+        return tonumber(actualHash) == tonumber(hashOfCtx);
     end,
     modifyStat = function (job, stat, playerContext)
         local flags = playerContext.flags;
@@ -110,9 +131,19 @@ STIKSharedFunctions = {
         if (not(STIKSharedFunctions.isHashOK(context))) then
             message(STIKConstants.texts.err.hashIsWrong);
             context = {
-                hash = 2034843419,
+                hash = 1423957313,
                 stats = { str = 0, moral = 0, mg = 0, ag = 0, snp = 0, body = 0 },
-                skills = { },
+                skills = {
+                    battle = {
+                        nature = 0, shadows = 0, shooting = 0, elems = 0, magica = 0, fight_str = 0, holy = 0, fight_ag = 0,
+                    },
+                    social = {
+                        hearing = 0, stealing = 0, hacking = 0, stealth = 0, profession = 0, talking = 0,
+                    },
+                    passive = {
+                        hacking = 0, range_weapon = 0, armor = 0, stealth = 0, controll = 0, melee_weapon = 0,
+                    },
+                },
                 progress = { expr = 0, lvl = 1 },
                 flags = { isInBattle = 0 },
                 armor = { legs = "nothing", head = "nothing", body = "nothing" },

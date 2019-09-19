@@ -122,7 +122,7 @@ STIKRegister = {
                     local name = skillTypes[i].name;
                     MainPanelSTIK.Skills[name].Points.RecalcPoints();
                 end;
-                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
             end
         );
 
@@ -144,7 +144,7 @@ STIKRegister = {
                     local name = skillTypes[i].name;
                     MainPanelSTIK.Skills[name].Points.RecalcPoints();
                 end;
-                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
             end
         );
         
@@ -166,7 +166,7 @@ STIKRegister = {
                     local name = skillTypes[i].name;
                     MainPanelSTIK.Skills[name].Points.RecalcPoints();
                 end;
-                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
             end
         );
 
@@ -262,7 +262,11 @@ STIKRegister = {
                     local skill = getSkill(categoryName, skillName);
 
                     local getClearSkillValue = function()
-                        return playerContext.skills[categoryName][skillName];
+                        local clearSkill = playerContext.skills[categoryName][skillName];
+                        if (playerInfo.settings.showRollInfo) then
+                            print('Чистое значение навыка: '..clearSkill);
+                        end;
+                        return clearSkill;
                     end;
 
                     local getSkillStatBonuses = function(skillValue, skill)
@@ -285,11 +289,33 @@ STIKRegister = {
                         };
 
                         local resultBonuce = bonuceFromStats.main + bonuceFromStats.sub + bonuceFromStats.third;
-                        return resultBonuce;
+                        if (playerInfo.settings.showRollInfo) then
+                            print('Навык с бонусом от характеристик: '..skillValue + resultBonuce);
+                        end;
+                        return skillValue + resultBonuce;
                     end;
 
-                    local getSkillModifierBonuses = function(skillValue, skill)
-                        if (not skill.modifier) then return skillValue; end;
+                    local getRollSize = function(modifier)
+                        local toDiceSize = function(num, diceSize)
+                            return math.ceil((num * diceSize) / 100);
+                        end;
+                        if (playerInfo.settings.showRollInfo) then
+                            print('Нормированное значение кубиков: '..toDiceSize(modifier, size)..'-'..size + toDiceSize(modifier, size));
+                        end;
+                        return { min = toDiceSize(modifier, size), max = size + toDiceSize(modifier, size) };
+                    end;
+
+                    local getHealthPenalty = function(roll)
+                        local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
+                        if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
+                        if (playerInfo.settings.showRollInfo) then
+                            print('После штрафа от ОБ: '..roll.min * modiferOfHealth..'-'..roll.max * modiferOfHealth);
+                        end;
+                        return { min = roll.min * modiferOfHealth, max = roll.max * modiferOfHealth };
+                    end;
+
+                    local getSkillModifierBonuses = function(roll, skill)
+                        if (not skill.modifier) then return roll; end;
 
                         local getSkillModifier = function(modifier)
                             local normal = modifier.normal;
@@ -322,27 +348,98 @@ STIKRegister = {
                                 modifierValue = getSkillModifier(modifier);
                             end;
 
-                            skillValue = skillValue + (skillValue * modifierValue);
+                            roll = {
+                                min = math.floor(roll.min + (roll.min * modifierValue)),
+                                max = math.floor(roll.max + (roll.max * modifierValue))
+                            };
                         end;
-                        return math.floor(skillValue);
+                        if (playerInfo.settings.showRollInfo) then
+                            print('Посе модификатора от навыков: '..roll.min..'-'..roll.max);
+                        end;
+                        return roll;
                     end;
 
-                    local getRollSize = function(modifier)
-                        local toDiceSize = function(num, diceSize)
-                            return math.ceil((num * diceSize) / 100);
+                    local getArmorModifierBonuses = function(roll, skill)
+                        local changeModifierBySkill = function (modifier)
+                            local skill = playerContext.skills.passive.armor;
+                            if (modifier < 0) then
+                                local percent = skill / 100;
+                                local newModifier = modifier + percent / 3;
+                                if (newModifier > 0) then newModifier = 0; end;
+                                return newModifier;
+                            else
+                                local percent = (skill / 100) / 4;
+                                local newModifier = modifier + percent;
+                                if (newModifier > 0.35) then newModifier = 0.25; end;
+                                return newModifier;
+                            end;
                         end;
-                        return { min = toDiceSize(modifier, size), max = size + toDiceSize(modifier, size) };
+
+                        local clearModifierByArmor = {
+                            head = STIKConstants.armorPenalty.head[armor.head][skill.name],
+                            body = STIKConstants.armorPenalty.body[armor.body][skill.name],
+                            legs = STIKConstants.armorPenalty.legs[armor.legs][skill.name],
+                        };
+
+                        local modifierByArmor = {
+                            head = -changeModifierBySkill(clearModifierByArmor.head),
+                            body = -changeModifierBySkill(clearModifierByArmor.body),
+                            legs = -changeModifierBySkill(clearModifierByArmor.legs),
+                        };
+
+                        local armorSummaryModifier = modifierByArmor.head + modifierByArmor.body + modifierByArmor.legs;
+                        roll = {
+                            min = math.floor(roll.min - (roll.min * armorSummaryModifier)),
+                            max = math.floor(roll.max - (roll.max * armorSummaryModifier)),
+                        };
+                        if (playerInfo.settings.showRollInfo) then
+                            print('После модификаторов брони: '..roll.min..'-'..roll.max);
+                        end;
+                        return roll;
                     end;
 
+                    local getPenaltyBySize = function(roll, penalty)
+                        if (playerInfo.settings.showRollInfo) then
+                            print('После модификаторов размера куба: '..roll.min * penalty..'-'..roll.max * penalty);
+                        end;
+                        return { min = roll.min * penalty, max = roll.max * penalty }
+                    end;
+                    
+                    print('Бросок куба: '..STIKConstants.texts.skills[skill.name].." (d"..size..")");
+                    
                     local skillValue = getClearSkillValue();
-                    local bonuseFromSkill = getSkillStatBonuses(skillValue, skill);
-                    local skillWithBonuses = skillValue + bonuseFromSkill;
-                    local roll = getRollSize(skillWithBonuses, size);
-                    roll.min = getSkillModifierBonuses(roll.min, skill);
-                    roll.max = getSkillModifierBonuses(roll.max, skill);
+                    if (skillValue == 0) then
+                        print('Персонаж не владеет нужным навыком');
+                        if (playerInfo.settings.isEventStarted) then
+                            SendAddonMessage(
+                                "STIK_PLAYER_ANSWER",
+                                "roll_dice&"..STIKConstants.texts.skills[skill.name].." d"..size,
+                                "WHISPER",
+                                playerInfo.settings.currentMaster
+                            );
+                        end;
+                        RandomRoll(0, 1);
+                        return nil;
+                    end;
 
-                    if (roll.max == 0) then roll.max = 1; end;
-                    RandomRoll(roll.min, roll.max);
+                    local skillWithBonuses = getSkillStatBonuses(skillValue, skill);
+                    local roll = getRollSize(skillWithBonuses, size);
+                    local rollWithHealth = getHealthPenalty(roll);
+                    local rollWithSkillModifier = getSkillModifierBonuses(rollWithHealth, skill);
+                    local rollWithArmor = getArmorModifierBonuses(rollWithSkillModifier, skill);
+                    local finalRoll = getPenaltyBySize(rollWithArmor, settings.dice.penalty);
+
+                    if (finalRoll.max == 0) then finalRoll.max = 1; end;
+
+                    if (playerInfo.settings.isEventStarted) then
+                        SendAddonMessage(
+                            "STIK_PLAYER_ANSWER",
+                            "roll_dice&"..STIKConstants.texts.skills[skill.name].." d"..size,
+                            "WHISPER",
+                            playerInfo.settings.currentMaster
+                        );
+                    end;
+                    RandomRoll(finalRoll.min, finalRoll.max);
                 end
             );
         end
@@ -408,7 +505,7 @@ STIKRegister = {
                         local slot = settings.parent.slot;
                         armor[slot] = settings.armorType;
                         settings.parent.connectedWith:SetText(STIKConstants.texts.armor[slot]..": "..STIKConstants.texts.armorTypes[armor[slot]]);
-                        playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                        playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
                         settings.parent:Hide();
                     end;
                 end
@@ -476,7 +573,7 @@ STIKRegister = {
         AddButton:SetScript("OnClick",
             function()
                 STIKSharedFunctions.modifySkill(STIKConstants.texts.jobs.add, settings.category, settings.name, panel, playerContext);
-                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
             end
         );
 
@@ -489,7 +586,7 @@ STIKRegister = {
         RemoveButton:SetScript("OnClick",
             function()
                 STIKSharedFunctions.modifySkill(STIKConstants.texts.jobs.remove, settings.category, settings.name, panel, playerContext);
-                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
             end
         );
 
@@ -502,7 +599,7 @@ STIKRegister = {
         ClearButton:SetScript("OnClick",
             function()
                 STIKSharedFunctions.modifySkill(STIKConstants.texts.jobs.clear, settings.category, settings.name, panel, playerContext);
-                playerContext.hash = tonumber(STIKSharedFunctions.statHash(playerContext));
+                playerContext.hash = tonumber(STIKSharedFunctions.calculateHash(playerContext));
             end
         );
 

@@ -202,10 +202,10 @@ STIKConstants = {
         }
     },
     rollSizes = {
-        { size = 6, penalty = 1.2 },
-        { size = 12, penalty = 1.3 },
-        { size = 20, penalty = 1.4 },
-        { size = 100, penalty = 1.4 },
+        { size = 6, penalty = 0.75 },
+        { size = 12, penalty = 0.8 },
+        { size = 20, penalty = 0.83 },
+        { size = 100, penalty = 0.85 },
     },
     armorPenalty = {
         head = {
