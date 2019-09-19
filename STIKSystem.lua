@@ -71,20 +71,14 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 plot.stats[currentStat] = 0;
             end;
 
-            plot.skills = {
-                battle = {
-                    nature = 0, shadows = 0, shooting = 0, elems = 0, magica = 0, fight_str = 0, holy = 0, fight_ag = 0,
-                },
-                social = {
-                    hearing = 0, stealing = 0, hacking = 0, stealth = 0, profession = 0, talking = 0,
-                },
-                passive = {
-                    hacking = 0, range_weapon = 0, armor = 0, stealth = 0, controll = 0, melee_weapon = 0,
-                },
-            };
+            local sortedSkills = STIKSortTable(STIKConstants.skillTypes.types);
+            for i = 1, #sortedSkills do
+                local currentSkill = sortedSkills[i].name;
+                MainPanelSTIK.Skills[currentSkill].Points.RecalcPoints();
+            end;
 
             plot.params.points = STIKSharedFunctions.calculatePoints(plot.stats, plot.progress);
-            print("СИСТЕМА: Очки талантов сброшены!");
+            print("СИСТЕМА: Очки характеристик сброшены!");
         end,
         updateStats = function (plot)
             local sortedStats = STIKSortTable(STIKConstants.statsPanelElements.chars);
