@@ -65,22 +65,34 @@ function onDMSaySomething(prefix, msg, tp, sender)
 
     local commandHelpers = {
         clearTalantes = function (plot)
-            plot.stats.str = 0;
-            plot.stats.ag = 0;
-            plot.stats.snp = 0;
-            plot.stats.mg = 0;
-            plot.stats.body = 0;
-            plot.stats.moral = 0;
+            local sortedStats = STIKSortTable(STIKConstants.statsPanelElements.chars);
+            for i = 1, #sortedStats do
+                local currentStat = sortedStats[i].name;
+                plot.stats[currentStat] = 0;
+            end;
+
+            plot.skills = {
+                battle = {
+                    nature = 0, shadows = 0, shooting = 0, elems = 0, magica = 0, fight_str = 0, holy = 0, fight_ag = 0,
+                },
+                social = {
+                    hearing = 0, stealing = 0, hacking = 0, stealth = 0, profession = 0, talking = 0,
+                },
+                passive = {
+                    hacking = 0, range_weapon = 0, armor = 0, stealth = 0, controll = 0, melee_weapon = 0,
+                },
+            };
+
             plot.params.points = STIKSharedFunctions.calculatePoints(plot.stats, plot.progress);
             print("СИСТЕМА: Очки талантов сброшены!");
         end,
         updateStats = function (plot)
-            StatPanel.stat_str:SetText(STIKConstants.texts.stats.str..": "..plot.stats.str);
-            StatPanel.stat_ag:SetText(STIKConstants.texts.stats.ag..": "..plot.stats.ag);
-            StatPanel.stat_snp:SetText(STIKConstants.texts.stats.snp..": "..plot.stats.snp);
-            StatPanel.stat_mg:SetText(STIKConstants.texts.stats.mg..": "..plot.stats.mg);
-            StatPanel.stat_body:SetText(STIKConstants.texts.stats.body..": "..plot.stats.body);
-            StatPanel.stat_moral:SetText(STIKConstants.texts.stats.moral..": "..plot.stats.moral);
+            local sortedStats = STIKSortTable(STIKConstants.statsPanelElements.chars);
+            for i = 1, #sortedStats do
+                local currentStat = sortedStats[i].name;
+                local identifier = 'stat_'..currentStat;
+                StatPanel[identifier]:SetText(STIKConstants.texts.stats[currentStat]..": "..plot.stats[currentStat]);
+            end;
             StatPanel.Level:SetText(STIKConstants.texts.statsMeta.level..": "..plot.progress.lvl);
             StatPanel.Exp:SetText(STIKConstants.texts.statsMeta.expr..": "..plot.progress.expr.."/"..plot.progress.lvl * 1000);
             StatPanel.Avl:SetText(STIKConstants.texts.statsMeta.avaliable..": "..STIKSharedFunctions.calculatePoints(plot.stats, plot.progress));
@@ -123,6 +135,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                 end;
             end;
             commandHelpers.updateStats(currentPlot);
+            currentPlot.hash = tonumber(STIKSharedFunctions.calculateHash(currentPlot));
         end,
         set_level = function(level)
             local level = tonumber(level, 10);
@@ -134,8 +147,11 @@ function onDMSaySomething(prefix, msg, tp, sender)
             params.points = STIKSharedFunctions.calculatePoints(stats, progress);
             print('СИСТЕМА: Уровень установлен на '..progress.lvl);
             progress.expr = 0;
-            if shouldClearParams then commandHelpers.clearTalantes(currentPlot) end;
+            if shouldClearParams then
+                commandHelpers.clearTalantes(currentPlot);
+            end;
             commandHelpers.updateStats(currentPlot);
+            currentPlot.hash = tonumber(STIKSharedFunctions.calculateHash(currentPlot));
         end,
         get_info = function()
             local stats = currentPlot.stats;

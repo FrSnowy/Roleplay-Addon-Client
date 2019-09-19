@@ -190,49 +190,6 @@ STIKRegister = {
         local function setRollScript(view)
             view:SetScript("OnClick",
                 function()
-                    --[[
-                        local usingStat = menu.stat;
-                        local diceSize = settings.dice.size;
-                        if (usingStat == 'luck') then return RandomRoll(0, diceSize); end;
-
-                        local penaltyOfDice = settings.dice.penalty;
-                        local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
-                        if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
-
-                        local resultSkill = modiferOfHealth * (stats[usingStat] / penaltyOfDice);
-
-                        local penaltyByArmor = {
-                            head = -STIKConstants.armorPenalty.head[armor.head][usingStat],
-                            body = -STIKConstants.armorPenalty.body[armor.body][usingStat],
-                            legs = -STIKConstants.armorPenalty.legs[armor.legs][usingStat],
-                        };
-
-                        local rollWithoutArmor = math.ceil((diceSize * resultSkill)/100);
-                        local penaltyOfArmor = penaltyByArmor.head + penaltyByArmor.body + penaltyByArmor.legs;
-
-                        local minRoll = rollWithoutArmor - math.ceil(rollWithoutArmor * penaltyOfArmor);
-                        local maxRoll = diceSize + rollWithoutArmor;
-                        maxRoll = maxRoll - math.ceil(maxRoll * penaltyOfArmor);
-
-                        if (maxRoll == 0) then maxRoll = 1; end;
-                        if (playerInfo.settings.showRollInfo) then
-                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
-                            print('Приведенный навык: '..math.ceil((diceSize * stats[usingStat])/100));
-                            print('Модификатор от размера куба: '..string.sub(1 / penaltyOfDice, 0, 5));
-                            print('Модификатор от ОЗ: '..modiferOfHealth);
-                            print('Бросок модифицированного навыка (без учета брони): '..rollWithoutArmor);
-                            print('Дополнительный модификатор от брони: '..penaltyOfArmor);
-                            print('Нижний порог: '..rollWithoutArmor..'-('..rollWithoutArmor..'*'..penaltyOfArmor..') = '..minRoll);
-                            print('Верхний порог: ('..diceSize..'+'..rollWithoutArmor..')-(('..diceSize..'+'..rollWithoutArmor..')*'..penaltyOfArmor..') = '..maxRoll);
-                        else
-                            print('Бросок куба: '..STIKConstants.texts.stats[usingStat]..' (d'..settings.dice.size..')');
-                        end;
-
-                        if (playerInfo.settings.isEventStarted) then
-                            SendAddonMessage("STIK_PLAYER_ANSWER", "roll_dice&"..STIKConstants.texts.stats[usingStat].." d"..settings.dice.size, "WHISPER", playerInfo.settings.currentMaster);
-                        end;
-                        RandomRoll(minRoll, maxRoll);
-                    ]]--
                     local categoryName = STIKPanelLinks.RollPanel.Category;
                     local skillName = STIKPanelLinks.RollPanel.Name;
                     local size = settings.dice.size;
@@ -354,7 +311,7 @@ STIKRegister = {
                             };
                         end;
                         if (playerInfo.settings.showRollInfo) then
-                            print('Посе модификатора от навыков: '..roll.min..'-'..roll.max);
+                            print('После модификатора от навыков: '..roll.min..'-'..roll.max);
                         end;
                         return roll;
                     end;
@@ -399,10 +356,16 @@ STIKRegister = {
                     end;
 
                     local getPenaltyBySize = function(roll, penalty)
+                        roll = { min = math.floor(roll.min * penalty), max = math.floor(roll.max * penalty) };
                         if (playerInfo.settings.showRollInfo) then
-                            print('После модификаторов размера куба: '..roll.min * penalty..'-'..roll.max * penalty);
+                            print('После модификаторов размера куба: '..roll.min..'-'..roll.max);
                         end;
-                        return { min = roll.min * penalty, max = roll.max * penalty }
+                        return roll;
+                    end;
+
+                    if (MainPanelSTIK.Skills[categoryName].Points.GetAvailablePoints() < 0) then
+                        print('Требуется перераспределить '..STIKConstants.texts.skillTypes[categoryName]..' навыки');
+                        return nil;
                     end;
                     
                     print('Бросок куба: '..STIKConstants.texts.skills[skill.name].." (d"..size..")");
@@ -413,7 +376,7 @@ STIKRegister = {
                         if (playerInfo.settings.isEventStarted) then
                             SendAddonMessage(
                                 "STIK_PLAYER_ANSWER",
-                                "roll_dice&"..STIKConstants.texts.skills[skill.name].." d"..size,
+                                "roll_dice&"..STIKConstants.texts.skills[skill.name].."|d"..size,
                                 "WHISPER",
                                 playerInfo.settings.currentMaster
                             );
