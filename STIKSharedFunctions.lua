@@ -56,9 +56,7 @@ STIKSharedFunctions = {
     end,
     isHashOK = function (playerContext)
         local actualHash = STIKSharedFunctions.calculateHash(playerContext);
-        print(actualHash);
         local hashOfCtx = playerContext.hash;
-        print(hashOfCtx);
         return tonumber(actualHash) == tonumber(hashOfCtx);
     end,
     modifyStat = function (job, stat, playerContext)
