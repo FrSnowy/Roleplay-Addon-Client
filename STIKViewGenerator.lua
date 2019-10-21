@@ -676,6 +676,7 @@ local skillsPanelViewGenerator = function (progress, armor, stats, flags, params
                             pointSumm = pointSumm + categorySumm;
                         end;
 
+                        if (pointSumm < 0) then pointSumm = 0; end;
                         return pointSumm;
                     end;
 

@@ -354,17 +354,11 @@ STIKConstants = {
                     name = 'fight_str',
                     img = 'sword',
                     stats = { main = 'str', sub = 'body', third = 'snp' },
-                    modifier = {
-                        { block = 'skills', category = 'passive', name = 'melee_weapon', normal = 30 },
-                    },
                 },
                 {
                     name = 'fight_ag',
                     img = 'dagger',
                     stats = { main = 'ag', sub = 'snp', third = 'str' },
-                    modifier = {
-                        { block = 'skills', category = 'passive', name = 'melee_weapon', normal = 40 },
-                    },
                 },
                 {
                     name = 'shooting',
@@ -388,7 +382,6 @@ STIKConstants = {
                     img = 'warlock',
                     stats = { main = 'mg', sub = 'cntr', third = 'body' },
                     modifier = {
-                        { block = 'skills', category = 'passive', name = 'controll', normal = 1, reverse = true },
                         { block = 'skills', category = 'battle', name = 'holy', normal = 1, reverse = true },
                     }
                 },

@@ -371,19 +371,21 @@ STIKRegister = {
                     print('Бросок куба: '..STIKConstants.texts.skills[skill.name].." (d"..size..")");
                     
                     local skillValue = getClearSkillValue();
-                    if (skillValue == 0) then
-                        print('Персонаж не владеет нужным навыком');
-                        if (playerInfo.settings.isEventStarted) then
-                            SendAddonMessage(
-                                "STIK_PLAYER_ANSWER",
-                                "roll_dice&"..STIKConstants.texts.skills[skill.name].."|d"..size,
-                                "WHISPER",
-                                playerInfo.settings.currentMaster
-                            );
+                    --[[
+                        if (skillValue == 0) then
+                            print('Персонаж не владеет нужным навыком');
+                            if (playerInfo.settings.isEventStarted) then
+                                SendAddonMessage(
+                                    "STIK_PLAYER_ANSWER",
+                                    "roll_dice&"..STIKConstants.texts.skills[skill.name].."|d"..size,
+                                    "WHISPER",
+                                    playerInfo.settings.currentMaster
+                                );
+                            end;
+                            RandomRoll(0, 1);
+                            return nil;
                         end;
-                        RandomRoll(0, 1);
-                        return nil;
-                    end;
+                    ]]--
 
                     local skillWithBonuses = getSkillStatBonuses(skillValue, skill);
                     local roll = getRollSize(skillWithBonuses, size);
@@ -391,6 +393,11 @@ STIKRegister = {
                     local rollWithSkillModifier = getSkillModifierBonuses(rollWithHealth, skill);
                     local rollWithArmor = getArmorModifierBonuses(rollWithSkillModifier, skill);
                     local finalRoll = getPenaltyBySize(rollWithArmor, settings.dice.penalty);
+
+                    if (finalRoll.min < 0) then
+                        finalRoll.max = finalRoll.max - math.abs(finalRoll.min);
+                        finalRoll.min = 0;
+                    end;
 
                     if (finalRoll.max == 0) then finalRoll.max = 1; end;
 

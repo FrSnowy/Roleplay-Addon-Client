@@ -2,7 +2,9 @@
 
 STIKSharedFunctions = {
     calculatePoints = function (stats, progress)
-        return 100 + 5 * (progress.lvl - 1) - (stats.str + stats.ag + stats.snp + stats.mg + stats.body + stats.moral);
+        local defaultStatsOnLevel = 40 + 5 * (progress.lvl - 1);
+        local alreadySpendedStats = (stats.str + stats.ag + stats.mg + stats.snp + stats.cntr + stats.body + stats.will + stats.ptnc);
+        return defaultStatsOnLevel - alreadySpendedStats;
     end,
     calculateHealth = function (stats)
         return 3 + math.floor(stats.body / 20);
@@ -78,8 +80,8 @@ STIKSharedFunctions = {
                 else return stat; end;
             end,
             [STIKConstants.texts.jobs.remove] = function()
-                if (stat > 0) then return stat - 1;
-                else return 0; end;
+                if (stat > -25) then return stat - 1;
+                else return -25; end;
             end,
             [STIKConstants.texts.jobs.clear] = function()
                 return 0;
@@ -108,7 +110,7 @@ STIKSharedFunctions = {
 
         local jobConnector = {
             [STIKConstants.texts.jobs.add] = function()
-                if (currentValue < 40 + 5 * (progress.lvl - 1) and points > 0) then return currentValue + 1;
+                if (currentValue < 20 + 5 * (progress.lvl - 1) and points > 0) then return currentValue + 1;
                 else return currentValue; end;
             end,
             [STIKConstants.texts.jobs.remove] = function()
