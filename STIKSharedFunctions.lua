@@ -54,6 +54,7 @@ STIKSharedFunctions = {
     calculateHash = function(playerContext)
         local strOfStats = STIKSharedFunctions.statString(playerContext);
         local strOfSkills = STIKSharedFunctions.skillString(playerContext);
+        print(STIKStringHash(strOfStats..strOfSkills));
         return STIKStringHash(strOfStats..strOfSkills);
     end,
     isHashOK = function (playerContext)
@@ -135,7 +136,7 @@ STIKSharedFunctions = {
             context = {
                 hash = 1423957313,
                 stats = { 
-                    str = 0, mg = 0, snp = 0, body = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0
+                    str = 0, mg = 0, snp = 0, power = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0
                 },
                 skills = {
                     battle = {
@@ -145,7 +146,7 @@ STIKSharedFunctions = {
                         hearing = 0, stealing = 0, hacking = 0, stealth = 0, profession = 0, talking = 0,
                     },
                     passive = {
-                        hacking = 0, range_weapon = 0, armor = 0, stealth = 0, controll = 0, melee_weapon = 0,
+                       body = 0, controll = 0, armor = 0,
                     },
                 },
                 progress = { expr = 0, lvl = 1 },
