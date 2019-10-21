@@ -54,7 +54,6 @@ STIKSharedFunctions = {
     calculateHash = function(playerContext)
         local strOfStats = STIKSharedFunctions.statString(playerContext);
         local strOfSkills = STIKSharedFunctions.skillString(playerContext);
-        print(STIKStringHash(strOfStats..strOfSkills));
         return STIKStringHash(strOfStats..strOfSkills);
     end,
     isHashOK = function (playerContext)
