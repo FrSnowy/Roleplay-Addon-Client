@@ -153,7 +153,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             local params = currentPlot.params;
             local flags = currentPlot.flags;
             SendChatMessage('Версия: 2.1.0', "WHISPER", nil, sender);
-            SendChatMessage("STR:"..stats.str.." AG:"..stats.ag.." SNP:"..stats.snp.." MG:"..stats.mg.." BODY:"..stats.body.." MRL:"..stats.moral, "WHISPER", nil, sender);
+            SendChatMessage("STR:"..stats.str.." AG:"..stats.ag.." MG:"..stats.mg.." SNP:"..stats.snp.." CNTR:"..stats.cntr.." PWR:"..stats.power.." WILL:"..stats.will.." PTNC: "..stats.ptnc, "WHISPER", nil, sender);
             SendChatMessage("LVL:"..progress.lvl.." EXPR:"..progress.expr.."/"..(progress.lvl * 1000).." PNT:"..params.points, "WHISPER", nil, sender);
             SendChatMessage("HP:"..params.health.." SHLD:"..params.shield, "WHISPER", nil, sender);
             if (flags.isInBattle == 0) then

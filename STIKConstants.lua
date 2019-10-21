@@ -383,6 +383,7 @@ STIKConstants = {
                     fireWithStat = true,
                     stats = { main = 'mg', sub = 'cntr', third = 'power' },
                     modifier = {
+                        { block = 'skills', category = 'passive', name = 'controll', normal = 20 },
                         { block = 'skills', category = 'battle', name = 'holy', normal = 1, reverse = true },
                     }
                 },
