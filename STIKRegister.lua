@@ -114,6 +114,7 @@ STIKRegister = {
             function()
                 stats[settings.stat] = STIKSharedFunctions.modifyStat(STIKConstants.texts.jobs.add, stats[settings.stat], playerContext);
                 panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
+                if (playerContext.flags.isInBattle == 1) then return nil end;
                 playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                 MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
 
@@ -136,6 +137,7 @@ STIKRegister = {
             function()
                 stats[settings.stat] = STIKSharedFunctions.modifyStat(STIKConstants.texts.jobs.remove, stats[settings.stat], playerContext);
                 panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
+                if (playerContext.flags.isInBattle == 1) then return nil end;
                 playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                 MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
 
@@ -158,6 +160,7 @@ STIKRegister = {
             function()
                 stats[settings.stat] = STIKSharedFunctions.modifyStat(STIKConstants.texts.jobs.clear, stats[settings.stat], playerContext);
                 panel:SetText(STIKConstants.texts.stats[settings.stat]..": "..stats[settings.stat]);
+                if (playerContext.flags.isInBattle == 1) then return nil end;
                 playerContext.params.health = STIKSharedFunctions.calculateHealth(stats);
                 MainPanelSTIK.HP.Text:SetText(playerContext.params.health);
 
@@ -257,18 +260,18 @@ STIKRegister = {
                             return math.ceil((num * diceSize) / 100);
                         end;
                         if (playerInfo.settings.showRollInfo) then
-                            print('Нормированное значение кубиков: '..toDiceSize(modifier, size)..'-'..size + toDiceSize(modifier, size));
+                            print('Нормированное значение кубиков: '..toDiceSize(modifier, size)..'-'..size + math.floor(toDiceSize(modifier, size) * 0.5));
                         end;
-                        return { min = toDiceSize(modifier, size), max = size + toDiceSize(modifier, size) };
+                        return { min = toDiceSize(modifier, size), max = size + math.floor(toDiceSize(modifier, size) * 0.5) };
                     end;
 
                     local getHealthPenalty = function(roll)
-                        local modiferOfHealth = params.health/(3 + math.floor(stats.body / 20));
+                        local modiferOfHealth = params.health/(3 + math.floor(stats.power / 20)) + 0.2;
                         if (modiferOfHealth > 1) then modiferOfHealth = 1 end;
                         if (playerInfo.settings.showRollInfo) then
-                            print('После штрафа от ОБ: '..roll.min * modiferOfHealth..'-'..roll.max * modiferOfHealth);
+                            print('После штрафа от ОБ: '..math.floor(roll.min * modiferOfHealth)..'-'..math.floor(roll.max * modiferOfHealth));
                         end;
-                        return { min = roll.min * modiferOfHealth, max = roll.max * modiferOfHealth };
+                        return { min = math.floor(roll.min * modiferOfHealth), max = math.floor(roll.max * modiferOfHealth) };
                     end;
 
                     local getSkillModifierBonuses = function(roll, skill)

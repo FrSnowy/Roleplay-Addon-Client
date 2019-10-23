@@ -3,11 +3,11 @@
 STIKSharedFunctions = {
     calculatePoints = function (stats, progress)
         local defaultStatsOnLevel = 40 + 5 * (progress.lvl - 1);
-        local alreadySpendedStats = (stats.str + stats.ag + stats.mg + stats.snp + stats.cntr + stats.body + stats.will + stats.ptnc);
+        local alreadySpendedStats = (stats.str + stats.ag + stats.mg + stats.snp + stats.cntr + stats.power + stats.will + stats.ptnc);
         return defaultStatsOnLevel - alreadySpendedStats;
     end,
     calculateHealth = function (stats)
-        return 3 + math.floor(stats.body / 20);
+        return 3 + math.floor(stats.power / 20);
     end,
     getPlayerContext = function (playerInfo)
         if (playerInfo.settings.currentPlot == nil) then
@@ -133,7 +133,7 @@ STIKSharedFunctions = {
         if (not(STIKSharedFunctions.isHashOK(context))) then
             message(STIKConstants.texts.err.hashIsWrong);
             context = {
-                hash = 1423957313,
+                hash = 214899158,
                 stats = { 
                     str = 0, mg = 0, snp = 0, power = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0
                 },
@@ -142,10 +142,10 @@ STIKSharedFunctions = {
                         nature = 0, shadows = 0, shooting = 0, elems = 0, magica = 0, fight_str = 0, holy = 0, fight_ag = 0,
                     },
                     social = {
-                        hearing = 0, stealing = 0, hacking = 0, stealth = 0, profession = 0, talking = 0,
+                        hearing = 0, stealing = 0, stealth = 0,  talking = 0, looking = 0,
                     },
                     passive = {
-                       body = 0, controll = 0, armor = 0,
+                       body = 0, controll = 0, armor = 0, profession = 0, hacking = 0,
                     },
                 },
                 progress = { expr = 0, lvl = 1 },

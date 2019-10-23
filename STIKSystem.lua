@@ -41,7 +41,21 @@ function onAddonReady()
         end,
     }
 
+    local removeOldStats = function()
+        if (not(currentContext.skills.social.hacking == nil)) then
+            currentContext.skills.social.hacking = nil;
+            currentContext.hash = tonumber(STIKSharedFunctions.calculateHash(currentContext));
+            ReloadUI();
+        end;
+        if (not(currentContext.skills.social.profession == nil)) then
+            currentContext.skills.social.profession = nil;
+            currentContext.hash = tonumber(STIKSharedFunctions.calculateHash(currentContext));
+            ReloadUI();
+        end;
+    end;
+
     addonStatusConnector[addonStatus]();
+    removeOldStats();
 
 end;
 
@@ -95,7 +109,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
             MainPanelSTIK.HP.Text:SetText(plot.params.health);
         end,
         getMaxHP = function(plot)
-            return 3 + math.floor(plot.stats.body / 20)
+            return 3 + math.floor(plot.stats.power / 20)
         end,
     };
 
@@ -328,7 +342,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                     print('Вы присоединились к сюжету "'..title..'"');
                     if (not(playerInfo[meta])) then
                         playerInfo[meta] = {
-                            hash = 1423957313,
+                            hash = 214899158,
                         };
                         playerInfo[meta].stats = {
                             str = 0, mg = 0, snp = 0, body = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0,
@@ -339,10 +353,10 @@ function onDMSaySomething(prefix, msg, tp, sender)
                                 nature = 0, shadows = 0, shooting = 0, elems = 0, magica = 0, fight_str = 0, holy = 0, fight_ag = 0,
                             },
                             social = {
-                                hearing = 0, stealing = 0, hacking = 0, stealth = 0, profession = 0, talking = 0,
+                                hearing = 0, stealing = 0, stealth = 0,  talking = 0,
                             },
                             passive = {
-                                hacking = 0, range_weapon = 0, armor = 0, stealth = 0, controll = 0, melee_weapon = 0,
+                               body = 0, controll = 0, armor = 0, profession = 0, hacking = 0,
                             },
                         };
                         playerInfo[meta].params = {
