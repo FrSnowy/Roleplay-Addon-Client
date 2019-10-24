@@ -211,22 +211,22 @@ STIKConstants = {
         head = {
             nothing = {
                 fight_str = 0, fight_ag = 0, shooting = 0.1, magica = 0.1, shadows = 0.1, holy = 0.1, elems = 0, nature = 0,
-                body = -0.02, controll = -0.1, armor = -0.05, hacking = 0.2, profession = 0.1,
+                body = -0.02, controll = 0, armor = -0.05, hacking = 0.2, profession = 0.1,
                 talking = 0.1, stealing = 0.1, hearing = 0.2, stealth = 0.1, looking = 0.1,
             },
             cloth = {
                 fight_str = 0, fight_ag = 0, shooting = 0.05, magica = 0.05, shadows = 0.05, holy = 0.05, elems = 0.2, nature = 0.1,
-                body = 0, controll = -0.02, armor = -0.03, hacking = 0.1, profession = 0.05, 
+                body = 0, controll = 0.01, armor = -0.03, hacking = 0.1, profession = 0.05, 
                 talking = 0.05, stealing = 0.1, hearing = 0.1, stealth = 0.05, looking = 0.05,
             },
             leather = {
                 fight_str = 0, fight_ag = 0, shooting = 0, magica = 0, shadows = 0, holy = 0, elems = 0.1, nature = 0.05,
-                body = 0.02, controll = 0, armor = 0, hacking = 0, profession = 0,
+                body = 0.02, controll = 0.02, armor = 0, hacking = 0, profession = 0,
                 talking = 0, stealing = 0, hearing = 0, stealth = 0, looking = 0,
             },
             mail = {
                 fight_str = 0, fight_ag = -0.05, shooting = -0.1, magica = -0.1, shadows = -0.15, holy = 0.05, elems = 0, nature = 0,
-                body = 0.05, controll = 0.02, armor = 0.03, hacking = -0.05,profession = 0,
+                body = 0.05, controll = 0.03, armor = 0.03, hacking = -0.05,profession = 0,
                 talking = 0, stealing = -0.05, hearing = -0.1, stealth = -0.05, looking = -0.05,
             },
             plate = {
@@ -238,22 +238,22 @@ STIKConstants = {
         body = {
             nothing = {
                 fight_str = -0.05, fight_ag = 0.1, shooting = 0.1, magica = 0.1, shadows = 0.1, holy = -0.2, elems = -0.05, nature = 0.1,
-                body = -0.1, controll = -0.1, armor = -0.2, hacking = 0.2, profession = 0.05,
+                body = -0.1, controll = 0, armor = -0.2, hacking = 0.2, profession = 0.05,
                 talking = -0.3, stealing = 0.2, hearing = 0, stealth = 0.2, looking = 0,
             },
             cloth = {
                 fight_str = -0.05, fight_ag = 0.1, shooting = 0.05, magica = 0.05, shadows = 0.1, holy = 0, elems = 0.1, nature = 0.1,
-                body = 0, controll = -0.02, armor = -0.1, hacking = 0.1, profession = 0,
+                body = 0, controll = 0.01, armor = -0.1, hacking = 0.1, profession = 0,
                 talking = 0, stealing = 0.1, hearing = 0, stealth = 0.1, looking = 0,
             },
             leather = {
                 fight_str = 0, fight_ag = 0, shooting = 0, magica = 0, shadows = 0.05, holy = 0.05, elems = 0.05, nature = 0.05,
-                body = 0.03, controll = 0, armor = 0, hacking = 0, profession = -0.05,
+                body = 0.03, controll = 0.02, armor = 0, hacking = 0, profession = -0.05,
                 talking = 0, stealing = 0, hearing = 0, stealth = 0, looking = 0,
             },
             mail = {
                 fight_str = 0.02, fight_ag = -0.12, shooting = -0.1, magica = -0.1, shadows = 0, holy = 0.02, elems = 0, nature = -0.05,
-                body = 0.05, controll = 0.02, armor = 0.1, hacking = -0.1, profession = -0.05,
+                body = 0.05, controll = 0.03, armor = 0.1, hacking = -0.1, profession = -0.05,
                 talking = 0.02, stealing = -0.1, hearing = 0, stealth = -0.1, looking = 0,
             },
             plate = {
@@ -270,17 +270,17 @@ STIKConstants = {
             },
             cloth = {
                 fight_str = -0.05, fight_ag = 0.1, shooting = 0.05, magica = 0.05, shadows = 0, holy = 0, elems = 0.05, nature = 0.1,
-                body = 0, controll = -0.02, armor = -0.1, hacking = 0, profession = 0,
+                body = 0, controll = 0.01, armor = -0.1, hacking = 0, profession = 0,
                 talking = 0, stealing = 0, hearing = 0, stealth = 0.1, looking = 0,
             },
             leather = {
                 fight_str = 0, fight_ag = 0.05, shooting = 0, magica = 0, shadows = 0.05, holy = 0.05, elems = 0.1, nature = 0.05,
-                body = 0.03, controll = 0, armor = 0, hacking = 0, profession = 0,
+                body = 0.03, controll = 0.02, armor = 0, hacking = 0, profession = 0,
                 talking = 0, stealing = 0, hearing = 0, stealth = 0, looking = 0,
             },
             mail = {
                 fight_str = 0.02, fight_ag = -0.12, shooting = -0.05, magica = -0.05, shadows = 0, holy = 0.02, elems = 0, nature = -0.05,
-                body = 0.05, controll = 0.02, armor = 0.1, hacking = 0, profession = -0.05,
+                body = 0.05, controll = 0.03, armor = 0.1, hacking = 0, profession = -0.05,
                 talking = 0.02, stealing = -0.05, hearing = 0, stealth = -0.1, looking = 0,
             },
             plate = {
