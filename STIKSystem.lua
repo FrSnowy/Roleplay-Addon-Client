@@ -345,7 +345,7 @@ function onDMSaySomething(prefix, msg, tp, sender)
                             hash = 214899158,
                         };
                         playerInfo[meta].stats = {
-                            str = 0, mg = 0, snp = 0, body = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0,
+                            str = 0, mg = 0, snp = 0, power = 0, cntr = 0, ptnc = 0, moral = 0, will = 0, ag = 0,
                         };
                         playerInfo[meta].progress = { expr = 0, lvl = 1 };
                         playerInfo[meta].skills = {
